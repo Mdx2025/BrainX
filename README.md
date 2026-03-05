@@ -1,5 +1,7 @@
 # 🧠 BrainX — The First Brain for OpenClaw
 
+![BrainX Banner](assets/brainx-banner.png)
+
 > **Your AI agents forget everything after each session. BrainX fixes that — permanently.**
 
 BrainX is a persistent vector memory engine for [OpenClaw](https://openclaw.ai) that gives your AI agents real, long-term memory. Built on PostgreSQL + pgvector + OpenAI embeddings, it stores, searches, and auto-injects contextual memories into every agent session.
