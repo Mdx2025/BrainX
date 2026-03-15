@@ -1,5 +1,6 @@
-# BrainX V4 Documentation
+# BrainX V5 Documentation
 
+- [**How It Works**](./HOW-IT-WORKS.md) — Guía funcional completa (empieza aquí)
 - [Architecture](./ARCHITECTURE.md)
 - [Configuration](./CONFIG.md)
 - [CLI Reference](./CLI.md)

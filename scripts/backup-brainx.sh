@@ -1,17 +1,17 @@
 #!/bin/bash
-# BrainX V4 - Backup Completo
+# BrainX V5 - Backup Completo
 # Uso: ./backup-brainx.sh [output_dir]
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BRAINX_DIR="$(dirname "$SCRIPT_DIR")"
-BACKUP_DIR="${1:-${HOME}/backups/brainx-v4}"
+BACKUP_DIR="${1:-${HOME}/backups/brainx-v5}"
 DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_NAME="brainx-v4_backup_${DATE}"
+BACKUP_NAME="brainx-v5_backup_${DATE}"
 BACKUP_PATH="$BACKUP_DIR/$BACKUP_NAME"
 
-echo "🧠 BrainX V4 - Sistema de Backup"
+echo "🧠 BrainX V5 - Sistema de Backup"
 echo "=================================="
 echo "Destino: $BACKUP_PATH"
 echo ""
@@ -28,8 +28,8 @@ if command -v pg_dump >/dev/null 2>&1; then
     fi
     
     if [ -n "${DATABASE_URL:-}" ]; then
-        pg_dump "$DATABASE_URL" > "$BACKUP_PATH/brainx_v4_database.sql"
-        echo "   ✅ Base de datos respaldada ($(stat -c%s "$BACKUP_PATH/brainx_v4_database.sql" | numfmt --to=iec))"
+        pg_dump "$DATABASE_URL" > "$BACKUP_PATH/brainx_v5_database.sql"
+        echo "   ✅ Base de datos respaldada ($(stat -c%s "$BACKUP_PATH/brainx_v5_database.sql" | numfmt --to=iec))"
     else
         echo "   ⚠️  DATABASE_URL no encontrada, saltando backup de DB"
     fi
@@ -42,7 +42,7 @@ echo "📄 2/6 Respaldando archivos de configuración..."
 mkdir -p "$BACKUP_PATH/config"
 
 # Skill principal
-cp -r "$BRAINX_DIR" "$BACKUP_PATH/config/brainx-v4-skill" 2>/dev/null || true
+cp -r "$BRAINX_DIR" "$BACKUP_PATH/config/brainx-v5-skill" 2>/dev/null || true
 
 # .env de openclaw global
 cp "${HOME}/.openclaw/.env" "$BACKUP_PATH/config/openclaw.env" 2>/dev/null || true
@@ -77,9 +77,9 @@ echo "   ✅ $(ls -1 "$BACKUP_PATH/workspaces" 2>/dev/null | wc -l) archivos res
 echo "🔧 5/6 Respaldando wrappers de workspaces..."
 mkdir -p "$BACKUP_PATH/wrappers"
 for ws in "${HOME}/.openclaw/workspace-"*/; do
-    if [ -f "$ws/hooks/brainx-v4-wrapper.sh" ]; then
+    if [ -f "$ws/hooks/brainx-v5-wrapper.sh" ]; then
         name=$(basename "$ws")
-        cp "$ws/hooks/brainx-v4-wrapper.sh" "$BACKUP_PATH/wrappers/${name}_wrapper.sh" 2>/dev/null || true
+        cp "$ws/hooks/brainx-v5-wrapper.sh" "$BACKUP_PATH/wrappers/${name}_wrapper.sh" 2>/dev/null || true
     fi
 done
 echo "   ✅ $(ls -1 "$BACKUP_PATH/wrappers" 2>/dev/null | wc -l) wrappers respaldados"
@@ -92,8 +92,8 @@ cat > "$BACKUP_PATH/METADATA.json" << EOF
   "created_at": "$(date -u '+%Y-%m-%dT%H:%M:%SZ')",
   "hostname": "$(hostname)",
   "user": "$(whoami)",
-  "brainx_v4": {
-    "database": "brainx_v4",
+  "brainx_v5": {
+    "database": "brainx_v5",
     "tables": [
       "brainx_memories",
       "brainx_learning_details",
@@ -104,8 +104,8 @@ cat > "$BACKUP_PATH/METADATA.json" << EOF
     ]
   },
   "files": {
-    "database_sql": "brainx_v4_database.sql",
-    "skill_dir": "config/brainx-v4-skill",
+    "database_sql": "brainx_v5_database.sql",
+    "skill_dir": "config/brainx-v5-skill",
     "openclaw_env": "config/openclaw.env",
     "openclaw_config": "config/openclaw.json",
     "hooks": "hooks/",

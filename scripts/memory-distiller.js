@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * BrainX V4 — Memory Distiller (LLM-powered)
+ * BrainX V5 — Memory Distiller (LLM-powered)
  * 
  * Reads session transcripts and uses a cheap/fast LLM to extract
  * ALL types of memories: personal facts, financial data, preferences,
@@ -20,7 +20,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const AGENTS_DIR = path.join(process.env.HOME || '/home/clawd', '.openclaw', 'agents');
+const AGENTS_DIR = path.join(process.env.HOME || '', '.openclaw', 'agents');
 const BRAINX_DIR = path.join(__dirname, '..');
 
 // ── Config ────────────────────────────────────────────
@@ -168,6 +168,47 @@ RULES:
 Conversation transcript:
 `;
 
+async function probeOpenAIAuth(model = DEFAULT_MODEL) {
+  if (!OPENAI_API_KEY) {
+    return { tested: false, ok: false, reason: 'missing_key' };
+  }
+
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: 'Reply only with OK' }],
+        temperature: 0,
+        max_tokens: 5,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.text();
+      return {
+        tested: true,
+        ok: false,
+        status: res.status,
+        error: err.slice(0, 300),
+      };
+    }
+
+    return { tested: true, ok: true, status: res.status };
+  } catch (e) {
+    return {
+      tested: true,
+      ok: false,
+      reason: 'probe_failed',
+      error: (e.message || String(e)).slice(0, 300),
+    };
+  }
+}
+
 async function callLLM(transcript, model) {
   if (!OPENAI_API_KEY) throw new Error('OPENAI_API_KEY required');
 
@@ -191,7 +232,8 @@ async function callLLM(transcript, model) {
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`LLM call failed: ${res.status} ${err.slice(0, 300)}`);
+    const code = res.status === 401 ? 'OPENAI_AUTH_401' : `OPENAI_HTTP_${res.status}`;
+    throw new Error(`${code}: ${err.slice(0, 300)}`);
   }
 
   const data = await res.json();
@@ -284,6 +326,8 @@ async function main() {
     memoriesMerged: 0,
     tokensUsed: { prompt: 0, completion: 0 },
     errors: [],
+    authProbe: null,
+    verifiedRootCause: null,
   };
 
   const toProcess = sessions
@@ -350,6 +394,13 @@ async function main() {
     } catch (e) {
       summary.errors.push(`${session.agent}/${session.sessionId}: ${(e.message || '').slice(0, 150)}`);
     }
+  }
+
+  if (summary.errors.some(e => String(e).includes('OPENAI_AUTH_401'))) {
+    summary.authProbe = await probeOpenAIAuth(args.model);
+    summary.verifiedRootCause = summary.authProbe?.ok === false && summary.authProbe?.status === 401
+      ? 'verified_openai_auth_401'
+      : null;
   }
 
   if (!args.dryRun) saveDistilledLog(distilledLog);

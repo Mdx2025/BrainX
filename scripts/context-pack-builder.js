@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * BrainX V4 — Context-Pack Builder (Phase 2.2)
+ * BrainX V5 — Context-Pack Builder (Phase 2.2)
  *
  * Generates weekly "context packs" that summarise hot/warm memories
  * grouped by context (agent:*, project:*).  Packs are compact markdown

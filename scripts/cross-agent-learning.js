@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * cross-agent-learning.js — BrainX V4 Phase 4.2
+ * cross-agent-learning.js — BrainX V5 Phase 4.2
  *
  * Propagates high-importance learnings and gotchas from individual agents
  * to the global context so ALL agents benefit from shared discoveries.

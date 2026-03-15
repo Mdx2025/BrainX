@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * BrainX V4 — Session Harvester
+ * BrainX V5 — Session Harvester
  * 
  * Reads recent OpenClaw session JSONLs and extracts high-signal memories.
  * Designed to run as a cron agentTurn every 4h.
@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const AGENTS_DIR = path.join(process.env.HOME || '/home/clawd', '.openclaw', 'agents');
+const AGENTS_DIR = path.join(process.env.HOME || '', '.openclaw', 'agents');
 const BRAINX_DIR = path.join(__dirname, '..');
 
 // Parse args

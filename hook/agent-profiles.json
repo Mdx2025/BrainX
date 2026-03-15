@@ -1,0 +1,52 @@
+{
+  "coder": {
+    "contexts": ["infrastructure", "code", "deploy", "github"],
+    "excludeTypes": [],
+    "boostTypes": ["gotcha", "error", "learning"]
+  },
+  "writer": {
+    "contexts": ["content", "seo", "marketing"],
+    "excludeTypes": [],
+    "boostTypes": ["decision", "learning"]
+  },
+  "monitor": {
+    "contexts": ["infrastructure", "health", "monitoring"],
+    "excludeTypes": [],
+    "boostTypes": ["gotcha", "error"]
+  },
+  "raider": {
+    "contexts": ["infrastructure", "code", "deploy", "operations"],
+    "excludeTypes": [],
+    "boostTypes": ["gotcha", "error", "learning", "decision"]
+  },
+  "clawma": {
+    "contexts": ["content", "marketing", "seo", "email"],
+    "excludeTypes": [],
+    "boostTypes": ["decision", "learning"]
+  },
+  "reasoning": {
+    "contexts": ["infrastructure", "code", "operations"],
+    "excludeTypes": [],
+    "boostTypes": ["decision", "learning", "gotcha"]
+  },
+  "support": {
+    "contexts": ["infrastructure", "operations", "health"],
+    "excludeTypes": [],
+    "boostTypes": ["gotcha", "error"]
+  },
+  "researcher": {
+    "contexts": ["content", "marketing", "seo"],
+    "excludeTypes": [],
+    "boostTypes": ["fact", "learning"]
+  },
+  "karl": {
+    "contexts": ["content", "marketing", "seo", "email"],
+    "excludeTypes": [],
+    "boostTypes": ["decision", "learning"]
+  },
+  "echo": {
+    "contexts": [],
+    "excludeTypes": [],
+    "boostTypes": []
+  }
+}

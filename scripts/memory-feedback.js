@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * memory-feedback.js — BrainX V4
+ * memory-feedback.js — BrainX V5
  *
  * Provides feedback loop for memory quality:
  *   --useful    → increment access_count, importance +1 (max 10), feedback_score +1

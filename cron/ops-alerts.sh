@@ -1,18 +1,46 @@
 #!/bin/bash
 set -euo pipefail
 
-ROOT="/home/clawd/.openclaw/skills/brainx-v4"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT"
 
-if [ -f .env ]; then
-  set -a
-  # shellcheck disable=SC1091
-  source .env
-  set +a
+load_env() {
+  for env_file in "$ROOT/.env" "$HOME/.openclaw/.env" "$HOME/.env"; do
+    if [ -f "$env_file" ]; then
+      set -a
+      # shellcheck disable=SC1090
+      source "$env_file"
+      set +a
+    fi
+  done
+  export DOTENV_CONFIG_QUIET="${DOTENV_CONFIG_QUIET:-true}"
+}
+
+detect_cli() {
+  for candidate in "$ROOT/brainx" "$ROOT/brainx-v5" "$ROOT/brainx-v5-cli"; do
+    if [ -x "$candidate" ]; then
+      echo "$candidate"
+      return 0
+    fi
+  done
+  return 1
+}
+
+load_env
+
+if ! BRAINX_CLI="$(detect_cli)"; then
+  echo "ERROR: BrainX CLI not found (checked: brainx, brainx-v5, brainx-v5-cli)"
+  exit 1
 fi
 
-LIFECYCLE_JSON=$(./brainx-v4 lifecycle-run --dryRun --json)
-METRICS_JSON=$(./brainx-v4 metrics --days 1 --json)
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "ERROR: DATABASE_URL not set"
+  exit 1
+fi
+
+LIFECYCLE_JSON=$("$BRAINX_CLI" lifecycle-run --dryRun --json)
+METRICS_JSON=$("$BRAINX_CLI" metrics --days 1 --json)
 
 INJECT_MS=$(echo "$METRICS_JSON" | jq -r '.query_performance[]? | select(.query_kind=="inject") | .avg_duration_ms' | head -n1)
 SEARCH_MS=$(echo "$METRICS_JSON" | jq -r '.query_performance[]? | select(.query_kind=="search") | .avg_duration_ms' | head -n1)
@@ -38,12 +66,13 @@ if [ "$DEGRADED" -gt 25 ]; then
 fi
 
 echo "Reporte operativo BrainX (24h)"
+echo "- cli: $(basename "$BRAINX_CLI")"
 echo "- lifecycle: promoted=${PROMOTED}, degraded=${DEGRADED}"
 echo "- latencia: inject=${INJECT_MS:-n/a}ms, search=${SEARCH_MS:-n/a}ms"
 if [ ${#ALERTS[@]} -eq 0 ]; then
   echo "- alertas: ninguna"
 else
-  echo "- alertas:" 
+  echo "- alertas:"
   for a in "${ALERTS[@]}"; do
     echo "  - ${a}"
   done

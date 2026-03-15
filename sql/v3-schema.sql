@@ -1,9 +1,9 @@
--- BrainX V4 schema (initial)
+-- BrainX V5 schema (production-synced)
 -- Requires: CREATE EXTENSION vector;
 
 CREATE TABLE IF NOT EXISTS brainx_memories (
   id TEXT PRIMARY KEY,
-  type TEXT NOT NULL CHECK (type IN ('decision', 'action', 'learning', 'gotcha', 'note', 'feature_request')),
+  type TEXT NOT NULL CHECK (type IN ('decision', 'action', 'learning', 'gotcha', 'note', 'feature_request', 'fact')),
   content TEXT NOT NULL,
   context TEXT,
   tier TEXT DEFAULT 'warm' CHECK (tier IN ('hot', 'warm', 'cold', 'archive')),
@@ -17,7 +17,11 @@ CREATE TABLE IF NOT EXISTS brainx_memories (
   superseded_by TEXT REFERENCES brainx_memories(id),
   tags TEXT[] DEFAULT '{}',
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'resolved', 'promoted', 'wont_fix')),
-  category TEXT CHECK (category IN ('learning', 'error', 'feature_request', 'correction', 'knowledge_gap', 'best_practice')),
+  category TEXT CHECK (category IN (
+    'learning', 'error', 'feature_request', 'correction', 'knowledge_gap', 'best_practice',
+    'infrastructure', 'project_registry', 'personal', 'financial', 'contact', 'preference',
+    'goal', 'relationship', 'health', 'business', 'client', 'deadline', 'routine', 'context'
+  )),
   pattern_key TEXT,
   recurrence_count INTEGER DEFAULT 1 CHECK (recurrence_count >= 1),
   first_seen TIMESTAMPTZ DEFAULT NOW(),
@@ -60,7 +64,11 @@ BEGIN
   ) THEN
     ALTER TABLE brainx_memories
       ADD CONSTRAINT brainx_memories_category_check
-      CHECK (category IS NULL OR category IN ('learning', 'error', 'feature_request', 'correction', 'knowledge_gap', 'best_practice'));
+      CHECK (category IS NULL OR category IN (
+        'learning', 'error', 'feature_request', 'correction', 'knowledge_gap', 'best_practice',
+        'infrastructure', 'project_registry', 'personal', 'financial', 'contact', 'preference',
+        'goal', 'relationship', 'health', 'business', 'client', 'deadline', 'routine', 'context'
+      ));
   END IF;
 EXCEPTION WHEN duplicate_object THEN
   NULL;
@@ -164,7 +172,7 @@ CREATE TABLE IF NOT EXISTS brainx_pilot_log (
   injected_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_mem_embedding ON brainx_memories USING ivfflat (embedding vector_cosine_ops) WITH (lists = 20);
+CREATE INDEX IF NOT EXISTS idx_mem_embedding ON brainx_memories USING hnsw (embedding vector_cosine_ops) WITH (m = 16, ef_construction = 64);
 CREATE INDEX IF NOT EXISTS idx_mem_tier ON brainx_memories (tier, importance DESC);
 CREATE INDEX IF NOT EXISTS idx_mem_context ON brainx_memories (context);
 CREATE INDEX IF NOT EXISTS idx_mem_tags ON brainx_memories USING gin (tags);
@@ -182,3 +190,12 @@ CREATE INDEX IF NOT EXISTS idx_patterns_last_seen ON brainx_patterns (last_seen 
 CREATE INDEX IF NOT EXISTS idx_patterns_recurrence ON brainx_patterns (recurrence_count DESC, impact_score DESC);
 CREATE INDEX IF NOT EXISTS idx_query_log_created ON brainx_query_log (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_query_log_kind_created ON brainx_query_log (query_kind, created_at DESC);
+
+-- Schema version tracking
+CREATE TABLE IF NOT EXISTS brainx_schema_version (
+  version INTEGER PRIMARY KEY,
+  description TEXT,
+  applied_at TIMESTAMPTZ DEFAULT NOW()
+);
+INSERT INTO brainx_schema_version (version, description) VALUES (5, 'V5: HNSW index, advisory, eidos, distillation, quality gate')
+ON CONFLICT (version) DO NOTHING;

@@ -1,8 +1,8 @@
-# Database schema (BrainX V4)
+# Database schema (BrainX V5)
 
 Source of truth: [`sql/v3-schema.sql`](../sql/v3-schema.sql)
 
-BrainX V4 uses PostgreSQL tables prefixed with `brainx_`.
+BrainX V5 uses PostgreSQL tables prefixed with `brainx_`.
 
 > Prerequisite: `CREATE EXTENSION IF NOT EXISTS vector;`
 

@@ -1,5 +1,19 @@
 #!/bin/bash
-# BrainX V4 Smart Inject Hook — v2 (Topic Files + Compact Index)
+# ⚠️ DEPRECATED — Use handler.js (OpenClaw internal hook). This script is kept for reference only.
+#
+# Known bugs (not fixed since deprecated):
+#   - Variables $decisions_raw and $gotchas_raw are used in the Highlights section
+#     but are never defined. The generate_topic() calls assign their counts to
+#     DECISION_COUNT/GOTCHA_COUNT but the raw output is captured locally and lost.
+#     Result: the Highlights section is always empty.
+#
+# The canonical hook is handler.js, deployed via:
+#   cp hook/{HOOK.md,handler.js,package.json} ~/.openclaw/hooks/brainx-auto-inject/
+#   openclaw hooks enable brainx-auto-inject
+#
+# ─────────────────────────────────────────────────────────────
+# Original description (preserved for reference):
+# BrainX V5 Smart Inject Hook — v2 (Topic Files + Compact Index)
 # Runs on agent:bootstrap event
 #
 # Generates:
@@ -20,7 +34,7 @@ AGENT_NAME="${OPENCLAW_AGENT:-unknown}"
 
 OUTPUT_FILE="$WORKSPACE_DIR/BRAINX_CONTEXT.md"
 TOPICS_DIR="$WORKSPACE_DIR/brainx-topics"
-BRAINX_CLI="$BRAINX_DIR/brainx-v4"
+BRAINX_CLI="$BRAINX_DIR/brainx-v5"
 TIMESTAMP="$(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
 # Load environment
@@ -31,7 +45,7 @@ fi
 # If brainx CLI not available, write fallback and exit cleanly
 if [ ! -f "$BRAINX_CLI" ] && [ ! -L "$BRAINX_CLI" ]; then
     cat > "$OUTPUT_FILE" << EOF
-# 🧠 BrainX V4 Context (Auto-Injected)
+# 🧠 BrainX V5 Context (Auto-Injected)
 
 **Agent:** $AGENT_NAME | **Updated:** $TIMESTAMP
 
@@ -212,7 +226,7 @@ if [ "$OWN_COUNT" -gt 0 ] 2>/dev/null; then
 fi
 
 {
-    echo "# 🧠 BrainX V4 Context (Auto-Injected)"
+    echo "# 🧠 BrainX V5 Context (Auto-Injected)"
     echo ""
     echo "**Agent:** $AGENT_NAME | **Updated:** $TIMESTAMP"
     echo "**Mode:** Compact index — lee topic files con \`cat brainx-topics/<file>.md\` cuando necesites detalle"

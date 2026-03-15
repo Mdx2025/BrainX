@@ -1,4 +1,4 @@
--- BrainX V4 Phase 2 migration (production-safe, idempotent)
+-- BrainX V5 Phase 2 migration (production-safe, idempotent)
 -- Scope: lifecycle governance, pattern/query observability tables, and indexes
 
 -- 1) Extend existing memory table with V4 fields

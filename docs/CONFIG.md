@@ -1,6 +1,6 @@
 # Configuration
 
-BrainX V4 is configured through environment variables.
+BrainX V5 is configured through environment variables.
 
 Recommended workflow:
 
@@ -16,7 +16,7 @@ Postgres connection string.
 Example:
 
 ```bash
-DATABASE_URL=postgresql://brainx:brainx_change_me@127.0.0.1:5432/brainx_v4
+DATABASE_URL=postgresql://brainx:brainx_change_me@127.0.0.1:5432/brainx_v5
 ```
 
 ### `OPENAI_API_KEY`

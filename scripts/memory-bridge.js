@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * BrainX V4 — Memory Bridge
+ * BrainX V5 — Memory Bridge
  *
  * Syncs daily memory/*.md files from all OpenClaw workspaces into BrainX.
  * Each H2 section becomes a searchable vector memory.
@@ -19,7 +19,7 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 
 const BRAINX_DIR = path.join(__dirname, '..');
-const OPENCLAW_DIR = path.join(process.env.HOME || '/home/clawd', '.openclaw');
+const OPENCLAW_DIR = path.join(process.env.HOME || '', '.openclaw');
 const SYNCED_TAG = '<!-- brainx-synced -->';
 
 // ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ function findRecentMemoryFiles(hoursAgo) {
 // Extract workspace name from path
 // ---------------------------------------------------------------------------
 function extractWorkspace(filePath) {
-  // e.g. /home/clawd/.openclaw/workspace-coder/memory/2026-02-25.md → coder
+  // e.g. ~/.openclaw/workspace-coder/memory/2026-02-25.md → coder
   const match = filePath.match(/workspace-([^/]+)/);
   return match ? match[1] : 'unknown';
 }
@@ -282,6 +282,8 @@ async function main() {
       importance: cand.classification.importance,
       category: cand.classification.category || null,
       agent: cand.workspace,
+      source_kind: 'memory-bridge',
+      source_path: cand.filePath,
       tags: [
         'memory-bridge',
         `workspace:${cand.workspace}`,

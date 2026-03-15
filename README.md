@@ -1,4 +1,4 @@
-# 🧠 BrainX — The First Brain for OpenClaw
+# 🧠 BrainX V5 — The First Brain for OpenClaw
 
 ![BrainX Banner](assets/brainx-banner.png)
 
@@ -23,8 +23,22 @@ BrainX changes the game:
 - **Auto-Learning** — Learns from every conversation automatically, zero manual work
 - **Hive Mind** — All agents share one brain. One agent learns → every agent benefits
 - **Semantic Search** — Find memories by meaning, not exact keywords (RAG/vector search)
-- **Auto-Injection** — Relevant context injected into every session on startup
-- **Battle-Tested** — Running in production with 9+ agents 24/7
+- **Auto-Injection** — Relevant context injected into every session on startup, personalized per agent
+- **Active Intelligence** — Advisory system warns agents before risky actions, EIDOS loop learns from outcomes
+- **Battle-Tested** — Running in production with 10+ agents 24/7
+
+---
+
+## What's New in V5
+
+- 🎯 **Advisory System** — Pre-action warnings for high-risk tools based on past failures and patterns
+- 🔄 **EIDOS Loop** — Prediction → Outcome → Evaluation → Distillation cycle for adaptive learning
+- ⚗️ **Auto-Distiller** — Processes session logs and auto-generates high-quality memories with smart heuristics
+- 🧹 **Memory Consolidation** — Clusters semantically similar memories and merges them via LLM (~22% noise reduction)
+- 🚪 **Pre-Storage Quality Gate** — Rejects noise ("ok", "HEARTBEAT_OK", short content) before it enters the DB
+- 📊 **Enhanced Scoring** — Retrieval integrates feedback_score, confidence_score, and temporal decay
+- 🧬 **Agent-Aware Injection** — Per-agent profiles with context boosts and type prioritization
+- 🏗️ **HNSW Indexing** — Faster vector search at scale (replaces IVFFlat)
 
 ---
 
@@ -37,22 +51,28 @@ BrainX changes the game:
 | 3 | 🤝 **Hive Mind** | All agents share the same memory pool — collective intelligence |
 | 4 | 🔎 **Semantic Search** | Vector similarity search powered by OpenAI embeddings |
 | 5 | 💉 **Auto-Injection** | OpenClaw hook injects relevant context on every agent bootstrap |
-| 6 | 🏷️ **Smart Classification** | Auto-types: facts, decisions, learnings, gotchas, notes, feature requests |
-| 7 | 📊 **Priority Tiers** | Hot/warm/cold tiers with automatic promotion and degradation |
-| 8 | 🤝 **Cross-Agent Learning** | Propagates important discoveries across all agents automatically |
-| 9 | 🔄 **Semantic Deduplication** | Cosine similarity dedup with intelligent merge |
-| 10 | ⚡ **Contradiction Detection** | Finds conflicting memories and supersedes the obsolete one |
-| 11 | 🔒 **PII Scrubbing** | Auto-redacts API keys, emails, phone numbers, passwords before storage |
-| 12 | 🔮 **Pattern Detection** | Detects recurring patterns and auto-promotes them to higher tiers |
-| 13 | 📋 **Session Indexing** | Searches past conversations with 30-day retention |
-| 14 | ⭐ **Quality Scoring** | Multi-dimensional quality evaluation with auto-promote/degrade |
-| 15 | 📌 **Fact Extraction** | Regex extracts URLs, repos, ports, branches, configs from sessions |
-| 16 | 📦 **Context Packs** | Weekly context packages organized per project and per agent |
-| 17 | 🔍 **Telemetry** | Injection logs, query performance metrics, operational dashboards |
-| 18 | 🔗 **Supersede Chains** | Obsolete memories marked but never deleted — full audit trail |
-| 19 | 🧬 **Memory Distiller** | LLM (gpt-4o-mini) extracts structured memories from session logs |
-| 20 | 🛡️ **Disaster Recovery** | Full backup/restore: database, configs, hooks, workspaces |
-| 21 | 💾 **Production Ready** | Battle-tested with 9+ agents running continuously |
+| 6 | 🧬 **Agent-Aware Profiles** | Per-agent injection with context boosts, type prioritization, and affinity scoring |
+| 7 | 🏷️ **Smart Classification** | Auto-types: facts, decisions, learnings, gotchas, notes, feature requests |
+| 8 | 📊 **Priority Tiers** | Hot/warm/cold tiers with automatic promotion and degradation |
+| 9 | 🤝 **Cross-Agent Learning** | Propagates important discoveries across all agents automatically |
+| 10 | 🔄 **Semantic Deduplication** | Cosine similarity dedup with intelligent merge |
+| 11 | 🧹 **Memory Consolidation** | Clusters near-duplicates and merges them into single high-quality memories |
+| 12 | ⚡ **Contradiction Detection** | Finds conflicting memories and supersedes the obsolete one |
+| 13 | 🔒 **PII Scrubbing** | Auto-redacts API keys, emails, phone numbers, passwords before storage |
+| 14 | 🔮 **Pattern Detection** | Detects recurring patterns and auto-promotes them to higher tiers |
+| 15 | 📋 **Session Indexing** | Searches past conversations with 30-day retention |
+| 16 | ⭐ **Quality Scoring** | Multi-dimensional quality evaluation with auto-promote/degrade |
+| 17 | 🚪 **Pre-Storage Quality Gate** | Rejects noise and downgrades short content before storage |
+| 18 | 📌 **Fact Extraction** | Regex extracts URLs, repos, ports, branches, configs from sessions |
+| 19 | ⚗️ **Auto-Distiller** | Processes session logs to auto-generate memories from error-fix sequences, decisions, and complex sessions |
+| 20 | 🎯 **Advisory System** | Pre-action advice for high-risk tools based on historical memory and patterns |
+| 21 | 🔄 **EIDOS Loop** | Prediction → Outcome → Evaluation → Distillation — adaptive learning cycle |
+| 22 | 📦 **Context Packs** | Weekly context packages organized per project and per agent |
+| 23 | 🔍 **Telemetry** | Injection logs, query performance metrics, operational dashboards |
+| 24 | 🔗 **Supersede Chains** | Obsolete memories marked but never deleted — full audit trail |
+| 25 | 🧬 **Memory Distiller** | LLM (gpt-4o-mini) extracts structured memories from session logs |
+| 26 | 🛡️ **Disaster Recovery** | Full backup/restore: database, configs, hooks, workspaces |
+| 27 | 💾 **Production Ready** | Battle-tested with 10+ agents running continuously |
 
 ---
 
@@ -60,13 +80,13 @@ BrainX changes the game:
 
 > BrainX doesn't just store memories — it **learns on its own.** Every conversation becomes permanent, shared knowledge without any human intervention.
 
-Auto-Learning is the orchestration of capture, curation, propagation, and injection that converts ephemeral conversations into permanent collective intelligence. It runs 24/7 via cron jobs.
+Auto-Learning is the orchestration of capture, curation, propagation, and injection that converts ephemeral conversations into permanent collective intelligence. It runs 24/7 via a single consolidated cron pipeline.
 
 ### The Auto-Learning Cycle
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│                    🧠 AUTO-LEARNING CYCLE                                │
+│                    🧠 AUTO-LEARNING CYCLE (V5)                           │
 │                                                                          │
 │   ┌─────────────┐    ┌──────────────┐    ┌──────────────┐               │
 │   │   Agent      │    │   Markdown   │    │   Manual     │               │
@@ -75,9 +95,10 @@ Auto-Learning is the orchestration of capture, curation, propagation, and inject
 │          │                  │                    │                        │
 │          ▼                  ▼                    ▼                        │
 │   ┌─────────────────────────────────────────────────────┐               │
-│   │          📥 AUTOMATIC CAPTURE (4 layers)             │               │
+│   │          📥 AUTOMATIC CAPTURE (5 layers)             │               │
 │   │                                                      │               │
 │   │  Memory Distiller ──► LLM extracts memories          │               │
+│   │  Auto-Distiller   ──► Heuristic session mining       │               │
 │   │  Fact Extractor   ──► Regex extracts hard data       │               │
 │   │  Session Harvester ─► Heuristics classify            │               │
 │   │  Memory Bridge    ──► Sync markdown → vectors        │               │
@@ -90,38 +111,39 @@ Auto-Learning is the orchestration of capture, curation, propagation, and inject
 │                    │   memory)       │                                   │
 │                    └────────┬────────┘                                   │
 │                             │                                            │
-│          ┌──────────────────┼──────────────────┐                        │
-│          ▼                  ▼                   ▼                        │
-│   ┌─────────────┐  ┌──────────────┐  ┌────────────────┐                │
-│   │ 🔄 SELF-    │  │ 🤝 CROSS-   │  │ 🔮 PATTERN    │                │
-│   │ IMPROVEMENT │  │ AGENT       │  │ DETECTION     │                │
-│   │             │  │ LEARNING    │  │               │                │
-│   │ Quality     │  │             │  │ Recurrence    │                │
-│   │ Scoring     │  │ Propagate   │  │ counting      │                │
-│   │ Dedup       │  │ gotchas &   │  │ Pattern keys  │                │
-│   │ Contradict. │  │ learnings   │  │ Auto-promote  │                │
-│   │ Cleanup     │  │ to ALL      │  │               │                │
-│   │ Lifecycle   │  │ agents      │  │               │                │
-│   └──────┬──────┘  └──────┬──────┘  └───────┬──────┘                │
-│          └────────────────┼──────────────────┘                        │
-│                           ▼                                            │
-│                  ┌─────────────────┐                                   │
-│                  │ 💉 CONTEXTUAL   │                                   │
-│                  │ INJECTION       │                                   │
-│                  │                 │                                   │
-│                  │ Auto-inject on  │                                   │
-│                  │ every agent     │                                   │
-│                  │ bootstrap       │                                   │
-│                  │ Score-based     │                                   │
-│                  │ ranking         │                                   │
-│                  └─────────────────┘                                   │
-│                           │                                            │
-│                           ▼                                            │
-│                  ┌─────────────────┐                                   │
-│                  │ 🤖 SMARTER     │                                   │
-│                  │ AGENTS          │                                   │
-│                  │ every session   │                                   │
-│                  └─────────────────┘                                   │
+│     ┌───────────────────────┼────────────────────────┐                  │
+│     ▼                       ▼                        ▼                  │
+│ ┌──────────────┐  ┌─────────────────┐  ┌───────────────────┐           │
+│ │ 🔄 SELF-     │  │ 🤝 CROSS-      │  │ 🔮 PATTERN &     │           │
+│ │ IMPROVEMENT  │  │ AGENT           │  │ ADVISORY         │           │
+│ │              │  │ LEARNING        │  │                   │           │
+│ │ Quality Gate │  │                 │  │ Pattern detect    │           │
+│ │ Quality Score│  │ Propagate       │  │ EIDOS loop        │           │
+│ │ Consolidation│  │ gotchas &       │  │ Advisory system   │           │
+│ │ Dedup        │  │ learnings       │  │ Trajectory track  │           │
+│ │ Contradict.  │  │ to ALL agents   │  │                   │           │
+│ │ Cleanup      │  │                 │  │                   │           │
+│ │ Lifecycle    │  │                 │  │                   │           │
+│ └──────┬───────┘  └──────┬──────────┘  └────────┬──────────┘           │
+│        └─────────────────┼───────────────────────┘                      │
+│                          ▼                                               │
+│                 ┌─────────────────┐                                      │
+│                 │ 💉 AGENT-AWARE  │                                      │
+│                 │ INJECTION       │                                      │
+│                 │                 │                                      │
+│                 │ Per-agent       │                                      │
+│                 │ profiles &      │                                      │
+│                 │ context boosts  │                                      │
+│                 │ Score-based     │                                      │
+│                 │ ranking         │                                      │
+│                 └─────────────────┘                                      │
+│                          │                                               │
+│                          ▼                                               │
+│                 ┌─────────────────┐                                      │
+│                 │ 🤖 SMARTER     │                                      │
+│                 │ AGENTS          │                                      │
+│                 │ every session   │                                      │
+│                 └─────────────────┘                                      │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -129,22 +151,21 @@ Auto-Learning is the orchestration of capture, curation, propagation, and inject
 
 ---
 
-### Automatic Memory Capture (4 Layers)
+### Automatic Memory Capture (5 Layers)
 
-BrainX captures memories through 4 complementary mechanisms running in parallel:
+BrainX captures memories through 5 complementary mechanisms running in a single daily pipeline:
 
-| Mechanism | How it works | What it captures | Frequency |
-|-----------|-------------|------------------|-----------|
-| **Memory Distiller** | LLM (gpt-4o-mini) reads full session transcripts | Preferences, decisions, personal data, technical configs, financial info — ALL memory types | Every 6h |
-| **Fact Extractor** | Regex patterns extract structured data | Production URLs, Railway services, GitHub repos, ports, branches, environment configs | Every 6h |
-| **Session Harvester** | Heuristics and regex classify conversations | Conversation patterns, recurring topics, operational context | Every 12h |
-| **Memory Bridge** | Syncs markdown files with vector database | Manual notes in `memory/*.md`, documentation, written decisions | Every 6h |
+| Mechanism | How it works | What it captures |
+|-----------|-------------|------------------|
+| **Memory Distiller** | LLM (gpt-4o-mini) reads full session transcripts | Preferences, decisions, personal data, technical configs, financial info — ALL memory types |
+| **Auto-Distiller** | Smart heuristics detect error→fix sequences, explicit decisions, repeated failures, and complex sessions | High-signal memories from raw session logs with ~70% fewer false positives than naive detection |
+| **Fact Extractor** | Regex patterns extract structured data | Production URLs, Railway services, GitHub repos, ports, branches, environment configs |
+| **Session Harvester** | Heuristics and regex classify conversations | Conversation patterns, recurring topics, operational context |
+| **Memory Bridge** | Syncs markdown files with vector database | Manual notes in `memory/*.md`, documentation, written decisions |
 
 ### Cross-Agent Learning (The Hive Mind)
 
 When one agent discovers something important (a bug, a gotcha, a learning), it gets automatically propagated to ALL other agents.
-
-**Script:** `scripts/cross-agent-learning.js`
 
 **How it works:**
 1. Scans recent memories with importance ≥ 7 and types `gotcha`, `learning`, `correction`
@@ -156,19 +177,45 @@ When one agent discovers something important (a bug, a gotcha, a learning), it g
 
 The memory optimizes itself — good memories rise, bad ones sink, duplicates merge, contradictions resolve:
 
-| Script | What it does | Frequency |
-|--------|-------------|-----------|
-| **quality-scorer.js** | Evaluates memories on specificity, actionability, relevance. Promotes high-quality, degrades low-quality | Daily |
-| **contradiction-detector.js** | Finds contradicting memories. Supersedes the obsolete version | Weekly |
-| **dedup-supersede.js** | Detects near-duplicates by cosine similarity. Intelligent merge keeping the most complete info | Weekly |
-| **cleanup-low-signal.js** | Archives low-value memories: too short, low importance, no recent access | Weekly |
-| **lifecycle-run** | Promotes/degrades between tiers: hot → warm → cold based on age, access, quality | Daily |
+| Script | What it does |
+|--------|-------------|
+| **Pre-Storage Quality Gate** | Rejects noise patterns ("ok", "HEARTBEAT_OK", content < 20 chars) before they enter the DB |
+| **quality-scorer.js** | Evaluates memories on specificity, actionability, relevance. Promotes high-quality, degrades low-quality |
+| **memory-consolidator.js** | Clusters semantically similar memories (>0.85 cosine) and merges them via LLM, superseding originals |
+| **contradiction-detector.js** | Finds contradicting memories. Supersedes the obsolete version |
+| **dedup-supersede.js** | Detects near-duplicates by cosine similarity. Intelligent merge keeping the most complete info |
+| **cleanup-low-signal.js** | Archives low-value memories: too short, low importance, no recent access |
+| **lifecycle-run** | Promotes/degrades between tiers: hot → warm → cold based on age, access, quality |
+
+### Advisory System (V5)
+
+BrainX V5 introduces **proactive intelligence** — the Advisory system warns agents before they execute high-risk actions.
+
+**High-risk tools include:** deploy, database migrations, file deletions, auth changes, service restarts, config rewrites, and more.
+
+**How it works:**
+1. Before executing a high-risk tool, the agent queries BrainX for relevant advisories
+2. BrainX searches memories for past failures, gotchas, and patterns related to that action
+3. Returns contextual warnings with cooldown tracking (no duplicate warnings within 1 hour)
+4. Agents can provide feedback on advisory usefulness to improve future recommendations
+
+### EIDOS Loop (V5)
+
+The **EIDOS (Evaluate, Identify, Distill, Optimize, Store)** loop adds adaptive learning through prediction and evaluation:
+
+1. **Predict** — Before an action, record what you expect to happen
+2. **Execute** — Perform the action
+3. **Evaluate** — Compare outcome vs prediction (correct/partial/wrong)
+4. **Distill** — Extract learnings from mismatches
+5. **Store** — Save distilled insights as high-quality memories
+
+This creates a feedback loop where agents literally learn from their mistakes.
 
 ---
 
 ## Architecture
 
-BrainX is intentionally lightweight — no HTTP server needed. It runs as a CLI tool, a set of cron scripts, and an OpenClaw hook.
+BrainX is intentionally lightweight — no HTTP server needed. It runs as a CLI tool, a single consolidated cron pipeline, and an OpenClaw hook.
 
 ### Components
 
@@ -182,42 +229,61 @@ BrainX is intentionally lightweight — no HTTP server needed. It runs as a CLI 
 │                       │                              │
 │              ┌────────▼────────┐                     │
 │              │  BrainX Hook    │  (agent:bootstrap)  │
+│              │  Agent-Aware    │                     │
 │              │  Auto-Inject    │                     │
 │              └────────┬────────┘                     │
 │                       │                              │
-│              ┌────────▼────────┐                     │
-│              │  BrainX CLI     │  add/search/inject  │
-│              └────────┬────────┘                     │
+│         ┌─────────────┼─────────────┐               │
+│         ▼             ▼             ▼               │
+│  ┌────────────┐ ┌──────────┐ ┌──────────┐          │
+│  │  Agent     │ │ BrainX   │ │ Advisory │          │
+│  │  Profiles  │ │ CLI      │ │ System   │          │
+│  └────────────┘ └────┬─────┘ └──────────┘          │
 │                       │                              │
 │              ┌────────▼────────┐                     │
 │              │  OpenAI API     │  embeddings         │
 │              └────────┬────────┘                     │
 │                       │                              │
 │              ┌────────▼────────┐                     │
-│              │  PostgreSQL     │                     │
-│              │  + pgvector     │  vector storage     │
+│              │  PostgreSQL     │  12 tables           │
+│              │  + pgvector     │  HNSW indexing      │
 │              └─────────────────┘                     │
 └─────────────────────────────────────────────────────┘
 ```
 
-- **PostgreSQL + pgvector** — Stores memories with 1536-dimension vector embeddings for fast semantic search
+- **PostgreSQL + pgvector** — Stores memories with 1536-dimension vector embeddings and HNSW indexing for fast semantic search
 - **OpenAI Embeddings API** — Generates vectors from text using `text-embedding-3-small`
 - **Node.js CLI** — Lightweight command-line interface for all memory operations
-- **OpenClaw Hook** — Automatically injects relevant context on every agent bootstrap
-- **Cron Scripts** — 9 automated jobs for learning, curation, and maintenance
+- **OpenClaw Hook** — Automatically injects relevant context on every agent bootstrap with per-agent profiles
+- **Consolidated Pipeline** — Single daily cron job runs all 8 maintenance steps sequentially
 
-### Data Flow
+### Database Schema (12 Tables)
 
-1. **Add:** CLI receives content → generates embedding via OpenAI → upserts into `brainx_memories` table
-2. **Search:** Query → embed → SQL with pgvector cosine distance → rank by similarity + importance + tier → return results
-3. **Inject:** Same as search, but output formatted for direct LLM prompt injection with metadata headers
+| Table | Purpose |
+|-------|---------|
+| `brainx_memories` | Core memory storage with vectors, tiers, types, and metadata |
+| `brainx_sessions` | Session index for conversation search |
+| `brainx_pilot_log` | Injection telemetry and stats |
+| `brainx_trajectories` | Trajectory recording for pattern analysis |
+| `brainx_advisories` | Advisory system cooldown and feedback tracking |
+| `brainx_eidos_cycles` | EIDOS prediction-evaluation-distillation records |
+| `brainx_distillation_log` | Auto-distiller processed sessions log |
+| `schema_version` | Schema version tracking |
+| + 4 supporting tables | Indexes, constraints, and operational metadata |
 
-### Ranking Algorithm
+### Ranking Algorithm (V5)
 
-Memories are ranked by a composite score:
+Memories are ranked by a composite score that combines multiple signals:
+
 - **Base:** Cosine similarity between query and memory embeddings
 - **Importance boost:** `(importance / 10) × 0.25`
 - **Tier adjustment:** hot +0.15, warm +0.05, cold -0.05, archive -0.10
+- **Feedback boost:** `(feedback_score / 5) × 0.10` — memories validated by agents rank higher
+- **Confidence boost:** `(confidence_score) × 0.08` — high-confidence memories get priority
+- **Temporal decay:** Recent memories get a slight boost, old untouched memories decay gradually
+- **Agent affinity:** +3 for memories from the same agent, +1 for shared/unattributed
+- **Context relevance:** +2 for memories matching the agent's profile contexts
+- **Type boost:** +1 for memory types matching the agent's priority types
 
 ---
 
@@ -228,27 +294,28 @@ Memories are ranked by a composite score:
 clawhub install brainx
 
 # 2. Setup database (after PostgreSQL + pgvector are ready)
-cd ~/.openclaw/skills/brainx
+cd ~/.openclaw/skills/brainx-v5
 cp .env.example .env
 # Edit .env with your DATABASE_URL and OPENAI_API_KEY
 npm install
 psql $DATABASE_URL -f sql/v3-schema.sql
 
 # 3. Verify
-./brainx-v4 health
+./brainx-v5 health
 
 # 4. Add your first memory
-./brainx-v4 add --type note --content "BrainX is now live!" --tier hot --importance 10
+./brainx-v5 add --type note --content "BrainX is now live!" --tier hot --importance 10
 
 # 5. Search it
-./brainx-v4 search --query "brainx status"
+./brainx-v5 search --query "brainx status"
 
 # 6. Deploy the hook (auto-injection)
 mkdir -p ~/.openclaw/hooks/brainx-auto-inject
-cp hook/{HOOK.md,handler.js,package.json} ~/.openclaw/hooks/brainx-auto-inject/
+cp hook/{HOOK.md,handler.js,agent-profiles.json,package.json} ~/.openclaw/hooks/brainx-auto-inject/
 openclaw hooks enable brainx-auto-inject
 
-# 7. Set up cron jobs (see SKILL.md for full schedule)
+# 7. Run the pipeline manually (or set up cron)
+./brainx-v5 lifecycle-run
 ```
 
 ---
@@ -257,13 +324,44 @@ openclaw hooks enable brainx-auto-inject
 
 | Command | Description |
 |---------|-------------|
-| `./brainx-v4 add` | Store a new memory with type, content, tier, importance, tags |
-| `./brainx-v4 search` | Semantic search — find memories by meaning |
-| `./brainx-v4 inject` | Search + format for direct LLM prompt injection |
-| `./brainx-v4 health` | Verify database connection and system health |
-| `./brainx-v4 lifecycle-run` | Run tier promotion/degradation cycle |
+| `./brainx-v5 add` | Store a new memory with type, content, tier, importance, tags |
+| `./brainx-v5 search` | Semantic search — find memories by meaning |
+| `./brainx-v5 inject` | Search + format for direct LLM prompt injection |
+| `./brainx-v5 health` | Verify database connection, tables, pgvector, and system health |
+| `./brainx-v5 doctor` | Run 18 diagnostic checks with warnings and fix suggestions |
+| `./brainx-v5 fix` | Auto-fix common issues detected by doctor |
+| `./brainx-v5 lifecycle-run` | Run tier promotion/degradation cycle |
+| `./brainx-v5 advisory` | Get pre-action advice for a specific tool or context |
+| `./brainx-v5 eidos predict` | Record a prediction before an action |
+| `./brainx-v5 eidos evaluate` | Evaluate an outcome against a prediction |
+| `./brainx-v5 eidos stats` | View EIDOS accuracy statistics |
 
 See [docs/CLI.md](docs/CLI.md) for full command reference with all flags and options.
+
+---
+
+## Agent Profiles
+
+BrainX V5 injects memories personalized per agent via `hook/agent-profiles.json`:
+
+```json
+{
+  "coder": {
+    "contexts": ["code", "debug", "infrastructure", "deploy"],
+    "boostTypes": ["fact", "gotcha", "error"]
+  },
+  "writer": {
+    "contexts": ["content", "marketing", "seo", "email"],
+    "boostTypes": ["note", "decision", "preference"]
+  }
+}
+```
+
+Each agent gets:
+- **Agent affinity** — Memories from the same agent rank +3 higher
+- **Context relevance** — Memories matching profile contexts rank +2 higher
+- **Type boosts** — Priority memory types for this agent rank +1 higher
+- **No exclusions** — All agents can access all knowledge; profiles only affect ranking priority
 
 ---
 
@@ -287,8 +385,9 @@ See [RESILIENCE.md](RESILIENCE.md) for:
 
 - **Runtime:** Node.js 18+
 - **Database:** PostgreSQL 14+ with pgvector extension
+- **Index:** HNSW (Hierarchical Navigable Small World) for fast approximate nearest neighbor search
 - **Embeddings:** OpenAI `text-embedding-3-small` (1536 dimensions)
-- **LLM (Distiller):** gpt-4o-mini for memory extraction
+- **LLM (Distiller):** gpt-4o-mini for memory extraction and consolidation
 - **Storage:** ~1KB per memory (text + vector + metadata)
 - **Dependencies:** `pg`, `dotenv` (minimal footprint)
 

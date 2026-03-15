@@ -1,38 +1,18 @@
 {
-  "name": "brainx",
-  "version": "1.0.0",
-  "description": "🧠 The First Brain for OpenClaw — Persistent vector memory that gives your AI agents real memory. One brain, every agent, shared intelligence that grows smarter with every conversation.",
+  "name": "brainx-v5",
+  "version": "0.1.0",
+  "private": true,
   "type": "commonjs",
-  "author": "Mdx2025",
-  "license": "MIT",
-  "keywords": [
-    "openclaw",
-    "clawhub",
-    "ai-memory",
-    "vector-database",
-    "pgvector",
-    "embeddings",
-    "llm-memory",
-    "multi-agent",
-    "rag",
-    "semantic-search",
-    "auto-learning",
-    "hive-mind",
-    "postgresql",
-    "openai",
-    "agent-context",
-    "persistent-memory",
-    "cross-agent-learning",
-    "pii-scrubbing"
-  ],
   "scripts": {
-    "test": "node ./tests/cli-v4.js",
+    "test": "node ./tests/cli-v5.js",
     "test:smoke": "node ./tests/smoke.js",
     "test:rag": "node ./tests/rag.js",
-    "eval:memory-quality": "node ./scripts/eval-memory-quality.js --dataset ./tests/fixtures/memory-eval-sample.jsonl"
+    "eval:memory-quality": "node ./scripts/eval-memory-quality.js --dataset ./tests/fixtures/memory-eval-sample.jsonl",
+    "eval:build-real-dataset": "node ./scripts/generate-eval-dataset-from-memories.js ./tests/fixtures/memory-eval-real.jsonl 80"
   },
   "dependencies": {
     "dotenv": "^17.3.1",
+    "openai": "^6.26.0",
     "pg": "^8.13.1"
   }
 }

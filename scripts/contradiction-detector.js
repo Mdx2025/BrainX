@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * BrainX V4 — Contradiction Detector (Phase 3.1)
+ * BrainX V5 — Contradiction Detector (Phase 3.1)
  *
  * Detects semantically overlapping hot memories and marks older/shorter
  * ones as superseded by their newer/more-complete counterpart.

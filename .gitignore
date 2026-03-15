@@ -1,9 +1,11 @@
 node_modules/
 .env
-.DS_Store
-cron/health.log
-cron/cron-output.log
+backups/
 data/
-tests/fixtures/memory-eval-real.jsonl
+brainx-topics/
+BRAINX_CONTEXT.md
+cron/cron-output.log
+cron/health.log
 package-lock.json
 pnpm-lock.yaml
+ISSUES_FIX_PLAN.md

@@ -274,7 +274,7 @@ async function run() {
     await t();
   }
 
-  console.log(`cli-v4 tests: ${tests.length} passed`);
+  console.log(`cli-v5 tests: ${tests.length} passed`);
 }
 
 run().catch((err) => {

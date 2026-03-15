@@ -1,13 +1,13 @@
-# CLI Reference (brainx-v4)
+# CLI Reference (brainx-v5)
 
-Entry point: `./brainx-v4`
+Entry point: `./brainx-v5`
 
 Internally it delegates to `lib/cli.js`.
 
 ## Global help
 
 ```bash
-./brainx-v4 --help
+./brainx-v5 --help
 ```
 
 ## `health`
@@ -15,7 +15,7 @@ Internally it delegates to `lib/cli.js`.
 Runs a database smoke test:
 
 ```bash
-./brainx-v4 health
+./brainx-v5 health
 ```
 
 Checks:
@@ -29,7 +29,7 @@ Checks:
 Store (upsert) a memory item.
 
 ```bash
-./brainx-v4 add \
+./brainx-v5 add \
   --type <type> \
   --content <text> \
   [--context <ctx>] \
@@ -64,7 +64,7 @@ Notes:
 Semantic search returning JSON.
 
 ```bash
-./brainx-v4 search \
+./brainx-v5 search \
   --query <text> \
   [--limit <n>] \
   [--minSimilarity <0-1>] \
@@ -84,7 +84,7 @@ Returned fields include:
 Semantic search formatted as a prompt-ready block (plain text).
 
 ```bash
-./brainx-v4 inject \
+./brainx-v5 inject \
   --query <text> \
   [--limit <n>] \
   [--context <ctx>] \
@@ -148,7 +148,7 @@ Optional:
 Set lifecycle resolution fields on a single memory (`--id`) or by recurring pattern (`--patternKey`).
 
 ```bash
-./brainx-v4 resolve \
+./brainx-v5 resolve \
   (--id <id> | --patternKey <key>) \
   --status <pending|in_progress|resolved|promoted|wont_fix> \
   [--resolvedAt <iso>] \
@@ -163,7 +163,7 @@ Returns JSON with updated rows.
 Lists recurring patterns that meet promotion thresholds. Output is JSON.
 
 ```bash
-./brainx-v4 promote-candidates \
+./brainx-v5 promote-candidates \
   [--minRecurrence <n>] \
   [--days <n>] \
   [--limit <n>] \
@@ -181,7 +181,7 @@ Automates lifecycle transitions:
 - refresh affected `brainx_patterns` aggregate status/recurrence timestamps
 
 ```bash
-./brainx-v4 lifecycle-run \
+./brainx-v5 lifecycle-run \
   [--promoteMinRecurrence <n>] \
   [--promoteDays <n>] \
   [--degradeDays <n>] \
@@ -202,7 +202,7 @@ Operational KPIs (JSON):
 - search/inject query performance from `brainx_query_log`
 
 ```bash
-./brainx-v4 metrics [--days <n>] [--topPatterns <n>] [--json]
+./brainx-v5 metrics [--days <n>] [--topPatterns <n>] [--json]
 ```
 
 ## Offline eval harness

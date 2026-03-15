@@ -1,4 +1,4 @@
-# 🛡️ BrainX V4 - Guía de Resiliencia y Disaster Recovery
+# 🛡️ BrainX V5 - Guía de Resiliencia y Disaster Recovery
 
 ## 📊 Análisis de Componentes Críticos
 
@@ -6,17 +6,17 @@
 
 | Componente | Ubicación | Riesgo | Impacto |
 |------------|-----------|--------|---------|
-| **PostgreSQL Database** | `postgresql://localhost:5432/brainx_v4` | 🔴 ALTO | 🔴 CRÍTICO - Todas las memorias |
+| **PostgreSQL Database** | `postgresql://localhost:5432/brainx_v5` | 🔴 ALTO | 🔴 CRÍTICO - Todas las memorias |
 | **OpenClaw Config** | `~/.openclaw/openclaw.json` | 🟡 MEDIO | 🟡 Configuración de hooks |
 | **Environment Vars** | `~/.openclaw/.env` | 🟡 MEDIO | 🔴 CRÍTICO - Credenciales DB/OpenAI |
-| **Skill Files** | `~/.openclaw/skills/brainx-v4/` | 🟢 BAJO | 🟢 Reinstalable desde GitHub |
+| **Skill Files** | `~/.openclaw/skills/brainx-v5/` | 🟢 BAJO | 🟢 Reinstalable desde GitHub |
 | **Custom Hooks** | `~/.openclaw/hooks/internal/` | 🟡 MEDIO | 🟡 Funcionalidad auto-inject |
 | **Workspace Docs** | `~/.openclaw/workspace-*/brainx.md` | 🟢 BAJO | 🟢 Documentación re-creatable |
 
 ### 2. Tablas de Base de Datos
 
 ```
-brainx_v4/
+brainx_v5/
 ├── brainx_memories              ← 🔴 CRÍTICO: Todas las memorias (126 registros)
 ├── brainx_learning_details      ← 🟡 Detalles de aprendizajes
 ├── brainx_trajectories          ← 🟡 Trayectorias de problemas
@@ -37,7 +37,7 @@ brainx_v4/
 **Qué pasa:**
 - OpenClaw se actualiza (`openclaw update` o `pnpm update -g openclaw`)
 - Los hooks internos se preservan
-- La skill de brainx-v4 permanece en `~/.openclaw/skills/`
+- La skill de brainx-v5 permanece en `~/.openclaw/skills/`
 
 **Protección:**
 - ✅ Los datos están en PostgreSQL (independientes de OpenClaw)
@@ -78,13 +78,13 @@ pnpm install -g openclaw
 # 2. Configurar gateway
 openclaw onboard
 
-# 3. Restaurar BrainX V4
-cd ~/backups/brainx-v4
-./restore-brainx.sh brainx-v4_backup_YYYYMMDD.tar.gz --force
+# 3. Restaurar BrainX V5
+cd ~/backups/brainx-v5
+./restore-brainx.sh brainx-v5_backup_YYYYMMDD.tar.gz --force
 
 # 4. Configurar variables de entorno
 # Editar ~/.openclaw/.env y agregar:
-# DATABASE_URL=postgresql://brainx:.../brainx_v4
+# DATABASE_URL=postgresql://brainx:.../brainx_v5
 # OPENAI_API_KEY=sk-...
 ```
 
@@ -97,17 +97,17 @@ cd ~/backups/brainx-v4
 **Pre-migración (VPS actual):**
 ```bash
 # Crear backup completo
-cd ~/.openclaw/skills/brainx-v4/scripts
-./backup-brainx.sh ~/brainx-v4-backup-final
+cd ~/.openclaw/skills/brainx-v5/scripts
+./backup-brainx.sh ~/brainx-v5-backup-final
 
-# El archivo ~/brainx-v4-backup-final/brainx-v4_backup_YYYYMMDD.tar.gz
+# El archivo ~/brainx-v5-backup-final/brainx-v5_backup_YYYYMMDD.tar.gz
 # contiene TODO lo necesario
 ```
 
 **Migración archivos:**
 ```bash
 # 1. Copiar backup al nuevo VPS
-scp ~/brainx-v4-backup-final/brainx-v4_backup_*.tar.gz \
+scp ~/brainx-v5-backup-final/brainx-v5_backup_*.tar.gz \
     usuario@nuevo-vps:/home/usuario/
 
 # 2. En el nuevo VPS, instalar dependencias:
@@ -126,33 +126,33 @@ sudo apt-get install postgresql postgresql-contrib
 # 2. Crear usuario y base de datos
 sudo -u postgres psql << EOF
 CREATE USER brainx WITH PASSWORD 'tu-password';
-CREATE DATABASE brainx_v4 OWNER brainx;
-GRANT ALL PRIVILEGES ON DATABASE brainx_v4 TO brainx;
+CREATE DATABASE brainx_v5 OWNER brainx;
+GRANT ALL PRIVILEGES ON DATABASE brainx_v5 TO brainx;
 EOF
 
 # 3. Instalar pgvector
 sudo apt-get install postgresql-16-pgvector  # Ajustar versión
 
 # 4. Habilitar extensión
-sudo -u postgres psql brainx_v4 -c "CREATE EXTENSION IF NOT EXISTS vector;"
+sudo -u postgres psql brainx_v5 -c "CREATE EXTENSION IF NOT EXISTS vector;"
 
 # 5. Instalar OpenClaw
 pnpm install -g openclaw
 openclaw onboard
 
-# 6. Restaurar BrainX V4
-tar -xzf brainx-v4_backup_*.tar.gz
-cd brainx-v4_backup_*/
-../scripts/restore-brainx.sh ../brainx-v4_backup_*.tar.gz --force
+# 6. Restaurar BrainX V5
+tar -xzf brainx-v5_backup_*.tar.gz
+cd brainx-v5_backup_*/
+../scripts/restore-brainx.sh ../brainx-v5_backup_*.tar.gz --force
 
 # 7. Configurar variables de entorno
 nano ~/.openclaw/.env
 # Agregar:
-# DATABASE_URL=postgresql://brainx:tu-password@localhost:5432/brainx_v4
+# DATABASE_URL=postgresql://brainx:tu-password@localhost:5432/brainx_v5
 # OPENAI_API_KEY=sk-...
 
 # 8. Reiniciar
-cd ~/.openclaw/skills/brainx-v4
+cd ~/.openclaw/skills/brainx-v5
 ./brainx health
 ```
 
@@ -164,31 +164,31 @@ cd ~/.openclaw/skills/brainx-v4
 
 Agregar a `crontab -e`:
 ```bash
-# Backup diario de BrainX V4 a las 3 AM
-0 3 * * * /home/clawd/.openclaw/skills/brainx-v4/scripts/backup-brainx.sh /home/clawd/backups/brainx-v4 >> /home/clawd/backups/brainx-v4/backup.log 2>&1
+# Backup diario de BrainX V5 a las 3 AM
+0 3 * * * ~/.openclaw/skills/brainx-v5/scripts/backup-brainx.sh ~/backups/brainx-v5 >> ~/backups/brainx-v5/backup.log 2>&1
 
 # Mantener solo los últimos 7 backups
-0 4 * * * find /home/clawd/backups/brainx-v4 -name "brainx-v4_backup_*.tar.gz" -mtime +7 -delete
+0 4 * * * find ~/backups/brainx-v5 -name "brainx-v5_backup_*.tar.gz" -mtime +7 -delete
 ```
 
 ### Backup Manual
 
 ```bash
 # Crear backup ahora
-~/.openclaw/skills/brainx-v4/scripts/backup-brainx.sh ~/mis-backups
+~/.openclaw/skills/brainx-v5/scripts/backup-brainx.sh ~/mis-backups
 
 # Resultado:
-# ~/mis-backups/brainx-v4_backup_20260220_125501.tar.gz
+# ~/mis-backups/brainx-v5_backup_20260220_125501.tar.gz
 ```
 
 ### Contenido del Backup
 
 ```
-brainx-v4_backup_YYYYMMDD_HHMMSS.tar.gz
-├── brainx_v4_database.sql          ← 🔴 Datos críticos (dump PostgreSQL)
+brainx-v5_backup_YYYYMMDD_HHMMSS.tar.gz
+├── brainx_v5_database.sql          ← 🔴 Datos críticos (dump PostgreSQL)
 ├── METADATA.json                   ← 📋 Info del backup
 ├── config/
-│   ├── brainx-v4-skill/           ← 📁 Skill completo
+│   ├── brainx-v5-skill/           ← 📁 Skill completo
 │   ├── openclaw.env               ← ⚙️ Variables de entorno
 │   └── openclaw.json              ← ⚙️ Configuración (hooks)
 ├── hooks/
@@ -215,7 +215,7 @@ brainx-v4_backup_YYYYMMDD_HHMMSS.tar.gz
 - [ ] Sincronizar backups a cloud (opcional):
   ```bash
   # Ejemplo con rclone
-  rclone sync ~/backups/brainx-v4 gdrive:backups/brainx-v4
+  rclone sync ~/backups/brainx-v5 gdrive:backups/brainx-v5
   ```
 
 ### Post-desastre
@@ -223,7 +223,7 @@ brainx-v4_backup_YYYYMMDD_HHMMSS.tar.gz
 - [ ] PostgreSQL está corriendo: `sudo systemctl status postgresql`
 - [ ] Base de datos existe: `psql $DATABASE_URL -c "\l"`
 - [ ] pgvector habilitado: `psql $DATABASE_URL -c "CREATE EXTENSION vector;"`
-- [ ] Skill funciona: `~/.openclaw/skills/brainx-v4/brainx health`
+- [ ] Skill funciona: `~/.openclaw/skills/brainx-v5/brainx health`
 - [ ] Hook ejecutable: `ls -la ~/.openclaw/hooks/internal/brainx-auto-inject`
 - [ ] Configuración en openclaw.json: `cat ~/.openclaw/openclaw.json | grep -A5 hooks`
 - [ ] Contexto generado: `cat ~/.openclaw/workspace-clawma/BRAINX_CONTEXT.md`
@@ -232,15 +232,15 @@ brainx-v4_backup_YYYYMMDD_HHMMSS.tar.gz
 
 ## 🔧 Comandos de Verificación
 
-### Verificar estado de BrainX V4
+### Verificar estado de BrainX V5
 
 ```bash
 # 1. Health check
-cd ~/.openclaw/skills/brainx-v4
+cd ~/.openclaw/skills/brainx-v5
 ./brainx health
 
 # 2. Contar memorias
-export DATABASE_URL="postgresql://brainx:.../brainx_v4"
+export DATABASE_URL="postgresql://brainx:.../brainx_v5"
 psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM brainx_memories;"
 
 # 3. Verificar hook
@@ -255,10 +255,10 @@ grep -E "DATABASE_URL|OPENAI_API_KEY" ~/.openclaw/.env
 
 ```bash
 # Si todo falla, restaurar solo la base de datos:
-pg_dump "postgresql://brainx:...@localhost/brainx_v4" > brainx_v4_emergency.sql
+pg_dump "postgresql://brainx:...@localhost/brainx_v5" > brainx_v5_emergency.sql
 
 # Y luego en el nuevo servidor:
-psql "postgresql://brainx:...@localhost/brainx_v4" < brainx_v4_emergency.sql
+psql "postgresql://brainx:...@localhost/brainx_v5" < brainx_v5_emergency.sql
 ```
 
 ---
@@ -269,8 +269,8 @@ psql "postgresql://brainx:...@localhost/brainx_v4" < brainx_v4_emergency.sql
 
 ```bash
 # Crear base de datos vacía
-sudo -u postgres createdb brainx_v4
-sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE brainx_v4 TO brainx;"
+sudo -u postgres createdb brainx_v5
+sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE brainx_v5 TO brainx;"
 ```
 
 ### Problema: "Extension 'vector' does not exist"
@@ -278,7 +278,7 @@ sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE brainx_v4 TO brainx;"
 ```bash
 # Instalar pgvector
 sudo apt-get install postgresql-16-pgvector
-sudo -u postgres psql brainx_v4 -c "CREATE EXTENSION vector;"
+sudo -u postgres psql brainx_v5 -c "CREATE EXTENSION vector;"
 ```
 
 ### Problema: Hook no ejecuta

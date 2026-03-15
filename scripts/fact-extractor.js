@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * BrainX V4 — Fact Extractor
+ * BrainX V5 — Fact Extractor
  * 
  * Extracts operational FACTS from session logs:
  * - URLs (production, staging, API endpoints)
@@ -21,7 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const AGENTS_DIR = path.join(process.env.HOME || '/home/clawd', '.openclaw', 'agents');
+const AGENTS_DIR = path.join(process.env.HOME || '', '.openclaw', 'agents');
 const BRAINX_DIR = path.join(__dirname, '..');
 
 // ── Args ──────────────────────────────────────────────

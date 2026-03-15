@@ -1,10 +1,10 @@
-# BrainX V4 Phase 2 - Runbook de despliegue a producción
+# BrainX V5 Phase 2 - Runbook de despliegue a producción
 
 Este runbook aplica **PII scrub + semantic dedupe + lifecycle automation + eval harness** en producción.
 
 ## 0) Pre-checks
 
-- Branch: `feat/brainx-v4-core-without-fallback`
+- Branch: `feat/brainx-v5-core-without-fallback`
 - Commit esperado (fase 2): `91c6a79`
 - DB con pgvector activa
 - Backup disponible antes de migrar
@@ -12,7 +12,7 @@ Este runbook aplica **PII scrub + semantic dedupe + lifecycle automation + eval 
 ## 1) Backup (obligatorio)
 
 ```bash
-cd /home/clawd/.openclaw/skills/brainx-v4
+cd ~/.openclaw/skills/brainx-v5
 ./scripts/backup-brainx.sh
 ```
 
@@ -21,7 +21,7 @@ Guardar el path del `.sql.gz` generado para rollback.
 ## 2) Migración SQL (idempotente)
 
 ```bash
-cd /home/clawd/.openclaw/skills/brainx-v4
+cd ~/.openclaw/skills/brainx-v5
 psql "$DATABASE_URL" -f sql/migrations/2026-02-24_phase2_governance.sql
 ```
 
@@ -59,11 +59,11 @@ BRAINX_LIFECYCLE_LOW_ACCESS_MAX=1
 ## 6) Smoke funcional (CLI)
 
 ```bash
-./brainx-v4 health
-./brainx-v4 add --type learning --content "Contacto: test@example.com" --context prod-test --category learning --tags pii
-./brainx-v4 search --query "contacto" --limit 3
-./brainx-v4 metrics --days 7 --json
-./brainx-v4 lifecycle-run --dryRun --json
+./brainx-v5 health
+./brainx-v5 add --type learning --content "Contacto: test@example.com" --context prod-test --category learning --tags pii
+./brainx-v5 search --query "contacto" --limit 3
+./brainx-v5 metrics --days 7 --json
+./brainx-v5 lifecycle-run --dryRun --json
 ```
 
 Esperado:

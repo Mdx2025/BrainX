@@ -1,6 +1,6 @@
-# Architecture (BrainX V4)
+# Architecture (BrainX V5)
 
-BrainX V4 is a lightweight memory service implemented as:
+BrainX V5 is a lightweight memory service implemented as:
 
 - **PostgreSQL** for storage + metadata filters
 - **pgvector** for vector similarity search
@@ -13,7 +13,7 @@ This repo is intentionally minimal: it can be embedded into larger systems (e.g.
 
 ### 1) CLI entrypoints
 
-- `./brainx-v4` (bash wrapper)
+- `./brainx-v5` (bash wrapper)
   - `health` → runs `tests/smoke.js`
   - `add|search|inject` → runs `lib/cli.js`
 

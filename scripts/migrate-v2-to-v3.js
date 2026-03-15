@@ -25,7 +25,9 @@ async function main() {
   const storageDir = path.join(v2Home, 'storage');
 
   if (!fs.existsSync(storageDir)) {
-    throw new Error(`V2 storage not found: ${storageDir}`);
+    console.log('ℹ️  V2 storage not found — migration not needed (already on V4).');
+    console.log(`   Looked in: ${storageDir}`);
+    process.exit(0);
   }
 
   const files = [];

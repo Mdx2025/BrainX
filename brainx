@@ -27,8 +27,14 @@ case "$CMD" in
   feedback)
     node "$ROOT/scripts/memory-feedback.js" "$@"
     ;;
-  add|fact|facts|search|inject|resolve|promote-candidates|lifecycle-run|metrics)
+  add|fact|facts|search|inject|resolve|promote-candidates|lifecycle-run|metrics|doctor|fix|--fix|advisory|advisory-feedback|eidos)
     node "$ROOT/lib/cli.js" "$CMD" "$@"
+    ;;
+  distill)
+    node "$ROOT/scripts/auto-distiller.js" "$@"
+    ;;
+  consolidate|consolidation)
+    node "$ROOT/scripts/memory-consolidator.js" "$@"
     ;;
   *)
     node "$ROOT/lib/cli.js" --help

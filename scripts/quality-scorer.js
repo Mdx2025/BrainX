@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * BrainX V4 — Quality Scorer (Phase 3.2)
+ * BrainX V5 — Quality Scorer (Phase 3.2)
  *
  * Evaluates existing memories for quality and relevance.
  * Promotes, maintains, degrades, or archives based on a computed score.

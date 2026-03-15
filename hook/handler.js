@@ -1,5 +1,5 @@
 /**
- * BrainX V4 Auto-Inject Hook Handler
+ * BrainX V5 Auto-Inject Hook Handler
  *
  * Runs on agent:bootstrap — queries PostgreSQL for hot/warm memories
  * and injects them into the agent's MEMORY.md + BRAINX_CONTEXT.md.
@@ -10,8 +10,20 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
 
-const BRAINX_DIR = "/home/clawd/.openclaw/skills/brainx-v4";
+const BRAINX_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const brainxRequire = createRequire(path.join(BRAINX_DIR, "index.js"));
+
+// ─── Agent profiles for context-aware injection ────────────────
+
+import { readFileSync } from "node:fs";
+
+let agentProfiles = {};
+try {
+  const raw = readFileSync(path.join(BRAINX_DIR, 'hook', 'agent-profiles.json'), 'utf-8');
+  agentProfiles = JSON.parse(raw);
+} catch {
+  // No profiles file — all agents get default (unfiltered) injection
+}
 
 // Section markers for MEMORY.md — content between these is replaced each run
 const BRAINX_START = "<!-- BRAINX:START -->";
@@ -22,7 +34,7 @@ const BRAINX_END = "<!-- BRAINX:END -->";
 function loadEnv() {
   try {
     const dotenv = brainxRequire("dotenv");
-    dotenv.config({ path: path.join(BRAINX_DIR, ".env") });
+    dotenv.config({ path: path.join(BRAINX_DIR, ".env"), quiet: true });
   } catch {}
 }
 
@@ -43,20 +55,63 @@ function truncate(str, max = 150) {
   return str.slice(0, max - 3) + "...";
 }
 
-// ─── DB queries ────────────────────────────────────────────────
+// ─── Retry helpers ─────────────────────────────────────────────
+
+const MAX_RETRIES = 3;
+const BASE_DELAY_MS = 500;
+const MAX_DELAY_MS = 5000;
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function calculateDelay(attempt) {
+  const exponential = BASE_DELAY_MS * Math.pow(2, attempt);
+  const jitter = Math.random() * 500;
+  return Math.min(exponential + jitter, MAX_DELAY_MS);
+}
+
+async function withRetry(operation, context = "operation") {
+  let lastError;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      lastError = err;
+      const isRetryable = err.code === 'ECONNREFUSED' || 
+                          err.code === 'ETIMEDOUT' ||
+                          err.code === 'ECONNRESET' ||
+                          err.message?.includes('connection') ||
+                          err.message?.includes('timeout');
+      
+      if (!isRetryable || attempt >= MAX_RETRIES - 1) {
+        throw err;
+      }
+      
+      const delay = calculateDelay(attempt);
+      console.log(`[brainx-inject] ${context} failed (attempt ${attempt + 1}/${MAX_RETRIES}), retrying in ${Math.round(delay)}ms...`);
+      await sleep(delay);
+    }
+  }
+  throw lastError;
+}
+
+// ─── DB queries (with retry wrapper) ───────────────────────────
 
 async function queryTopMemories(pool, { limit = 8, minImportance = 5 }) {
-  const { rows } = await pool.query(
-    `SELECT content, tier, importance, type, agent, context
-     FROM brainx_memories
-     WHERE tier IN ('hot', 'warm')
-       AND importance >= $1
-       AND superseded_by IS NULL
-     ORDER BY importance DESC, last_seen DESC NULLS LAST, created_at DESC
-     LIMIT $2`,
-    [minImportance, limit]
-  );
-  return rows;
+  return withRetry(async () => {
+    const { rows } = await pool.query(
+      `SELECT content, tier, importance, type, agent, context
+       FROM brainx_memories
+       WHERE tier IN ('hot', 'warm')
+         AND importance >= $1
+         AND superseded_by IS NULL
+       ORDER BY importance DESC, last_seen DESC NULLS LAST, created_at DESC
+       LIMIT $2`,
+      [minImportance, limit]
+    );
+    return rows;
+  }, "queryTopMemories");
 }
 
 async function queryAgentMemories(
@@ -64,46 +119,116 @@ async function queryAgentMemories(
   agentName,
   { limit = 5, minImportance = 5 }
 ) {
-  const { rows } = await pool.query(
-    `SELECT content, tier, importance, type, context
-     FROM brainx_memories
-     WHERE agent = $1
-       AND importance >= $2
-       AND superseded_by IS NULL
-     ORDER BY importance DESC, last_seen DESC NULLS LAST
-     LIMIT $3`,
-    [agentName, minImportance, limit]
-  );
-  return rows;
+  return withRetry(async () => {
+    const { rows } = await pool.query(
+      `SELECT content, tier, importance, type, context
+       FROM brainx_memories
+       WHERE agent = $1
+         AND importance >= $2
+         AND superseded_by IS NULL
+       ORDER BY importance DESC, last_seen DESC NULLS LAST
+       LIMIT $3`,
+      [agentName, minImportance, limit]
+    );
+    return rows;
+  }, "queryAgentMemories");
 }
 
 async function queryByType(pool, type, { limit = 10, minImportance = 5 }) {
-  const { rows } = await pool.query(
-    `SELECT content, tier, importance, type, agent, context
-     FROM brainx_memories
-     WHERE type = $1
-       AND tier IN ('hot', 'warm')
-       AND importance >= $2
-       AND superseded_by IS NULL
-     ORDER BY importance DESC, last_seen DESC NULLS LAST
-     LIMIT $3`,
-    [type, minImportance, limit]
-  );
-  return rows;
+  return withRetry(async () => {
+    const { rows } = await pool.query(
+      `SELECT content, tier, importance, type, agent, context
+       FROM brainx_memories
+       WHERE type = $1
+         AND tier IN ('hot', 'warm')
+         AND importance >= $2
+         AND superseded_by IS NULL
+       ORDER BY importance DESC, last_seen DESC NULLS LAST
+       LIMIT $3`,
+      [type, minImportance, limit]
+    );
+    return rows;
+  }, "queryByType");
 }
 
 async function queryFacts(pool, { limit = 25 }) {
-  const { rows } = await pool.query(
-    `SELECT content, tier, importance, context, tags::text AS tags
-     FROM brainx_memories
-     WHERE type = 'fact'
-       AND superseded_by IS NULL
-       AND tier IN ('hot', 'warm')
-     ORDER BY importance DESC, last_seen DESC NULLS LAST
-     LIMIT $1`,
-    [limit]
-  );
-  return rows;
+  return withRetry(async () => {
+    const { rows } = await pool.query(
+      `SELECT content, tier, importance, context, tags::text AS tags
+       FROM brainx_memories
+       WHERE type = 'fact'
+         AND superseded_by IS NULL
+         AND tier IN ('hot', 'warm')
+       ORDER BY importance DESC, last_seen DESC NULLS LAST
+       LIMIT $1`,
+      [limit]
+    );
+    return rows;
+  }, "queryFacts");
+}
+
+// ─── Agent-aware query (uses agent-profiles.json) ──────────────
+
+function getAgentProfile(agentName) {
+  return agentProfiles[agentName] || null;
+}
+
+async function queryAgentAwareMemories(pool, agentName, { limit = 8, minImportance = 5 }) {
+  const profile = getAgentProfile(agentName);
+
+  // No profile → fall back to default top memories (original behavior)
+  if (!profile || (profile.contexts.length === 0 && profile.excludeTypes.length === 0 && profile.boostTypes.length === 0)) {
+    return queryTopMemories(pool, { limit, minImportance });
+  }
+
+  return withRetry(async () => {
+    // Build dynamic query with agent-specific filtering and boosting
+    const params = [minImportance, limit];
+    let paramIdx = 3;
+
+    // Exclude types clause
+    let excludeClause = '';
+    if (profile.excludeTypes.length > 0) {
+      excludeClause = ` AND type NOT IN (${profile.excludeTypes.map(() => `$${paramIdx++}`).join(',')})`;
+      params.push(...profile.excludeTypes);
+    }
+
+    // Context boost: memories matching agent contexts get priority via ORDER BY
+    // Agent-specific memories (agent = agentName OR agent IS NULL) are always included
+    let contextBoostExpr = '0';
+    if (profile.contexts.length > 0) {
+      const contextPlaceholders = profile.contexts.map(() => `$${paramIdx++}`).join(',');
+      params.push(...profile.contexts);
+      contextBoostExpr = `CASE WHEN context IN (${contextPlaceholders}) THEN 2 ELSE 0 END`;
+    }
+
+    // Boost types: memories of boost types get +1 priority
+    let boostTypeExpr = '0';
+    if (profile.boostTypes.length > 0) {
+      const boostPlaceholders = profile.boostTypes.map(() => `$${paramIdx++}`).join(',');
+      params.push(...profile.boostTypes);
+      boostTypeExpr = `CASE WHEN type IN (${boostPlaceholders}) THEN 1 ELSE 0 END`;
+    }
+
+    // Agent affinity: boost memories from this agent
+    const agentBoostExpr = `CASE WHEN agent = $${paramIdx} THEN 3 WHEN agent IS NULL THEN 1 ELSE 0 END`;
+    params.push(agentName);
+
+    const sql = `SELECT content, tier, importance, type, agent, context
+       FROM brainx_memories
+       WHERE tier IN ('hot', 'warm')
+         AND importance >= $1
+         AND superseded_by IS NULL
+         ${excludeClause}
+       ORDER BY (${agentBoostExpr} + ${contextBoostExpr} + ${boostTypeExpr}) DESC,
+                importance DESC,
+                last_seen DESC NULLS LAST,
+                created_at DESC
+       LIMIT $2`;
+
+    const { rows } = await pool.query(sql, params);
+    return rows;
+  }, "queryAgentAwareMemories");
 }
 
 // ─── Formatting ────────────────────────────────────────────────
@@ -215,7 +340,7 @@ async function writeBrainxContext(
 
   // Compact index — always loaded
   const lines = [
-    "# BrainX V4 Context (Auto-Injected)",
+    "# BrainX V5 Context (Auto-Injected)",
     "",
     `**Agent:** ${agentName} | **Updated:** ${timestamp}`,
     "**Mode:** Compact index — read topic files with `cat brainx-topics/<file>.md` when you need detail",
@@ -310,17 +435,18 @@ const handler = async (event) => {
       return;
     }
 
-    const agentName = extractAgentId(event.sessionKey);
+    // Extract agent ID from multiple sources (event context, session key, env)
+    const agentName = event.agentId || event.agent || extractAgentId(event.sessionKey) || process.env.OPENCLAW_AGENT_ID || 'unknown';
     const timestamp = ts();
 
     const { Pool } = brainxRequire("pg");
     const pool = new Pool({ connectionString: dbUrl });
 
     try {
-      // Run all queries in parallel
+      // Run all queries in parallel (team memories are now agent-aware)
       const [teamMems, ownMems, facts, decisions, learnings] =
         await Promise.all([
-          queryTopMemories(pool, { limit: 8, minImportance: 5 }),
+          queryAgentAwareMemories(pool, agentName, { limit: 8, minImportance: 5 }),
           queryAgentMemories(pool, agentName, { limit: 5, minImportance: 5 }),
           queryFacts(pool, { limit: 25 }),
           queryByType(pool, "decision", { limit: 8, minImportance: 5 }),
@@ -417,10 +543,23 @@ const handler = async (event) => {
       await pool.end();
     }
   } catch (err) {
-    console.error(
-      "[brainx-inject] Error:",
-      err instanceof Error ? err.message : String(err)
-    );
+    const elapsed = Date.now() - t0;
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    
+    // Log error but don't crash the agent bootstrap
+    console.error(`[brainx-inject] Failed after ${elapsed}ms: ${errorMsg}`);
+    
+    // Write a minimal fallback to MEMORY.md so the agent knows BrainX had issues
+    try {
+      const workspaceDir = event.context?.workspaceDir;
+      if (workspaceDir) {
+        const fallbackSection = `${BRAINX_START}\n\n## BrainX Context (Auto-Injected)\n\n**⚠️ BrainX injection failed:** ${errorMsg}\n\n> Run \`brainx health\` to check status\n\n${BRAINX_END}`;
+        await updateMemoryMd(workspaceDir, fallbackSection);
+      }
+    } catch (fallbackErr) {
+      // If even fallback fails, just log it
+      console.error("[brainx-inject] Fallback write also failed:", fallbackErr);
+    }
   }
 };
 

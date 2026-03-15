@@ -1,7 +1,7 @@
 ---
 name: brainx-auto-inject
-description: "Auto-inject BrainX V4 vector memory context on agent bootstrap"
-homepage: https://github.com/Mdx2025/brainx-v4
+description: "Auto-inject BrainX V5 vector memory context on agent bootstrap"
+homepage: https://github.com/Mdx2025/brainx-v5
 metadata:
   {
     "openclaw":
@@ -9,12 +9,12 @@ metadata:
         "emoji": "🧠",
         "events": ["agent:bootstrap"],
         "requires": { "env": ["DATABASE_URL"] },
-        "install": [{ "id": "managed", "kind": "local", "label": "BrainX V4 Hook" }],
+        "install": [{ "id": "managed", "kind": "local", "label": "BrainX V5 Hook" }],
       },
   }
 ---
 
-# BrainX V4 Auto-Inject Hook
+# BrainX V5 Auto-Inject Hook
 
 Automatically injects relevant BrainX vector memories into agent context on every session start.
 
@@ -36,11 +36,11 @@ agents automatically receive relevant vector memories without any extra configur
 
 ## Deployment
 
-The hook source lives in `brainx-v4/hook/`. Deploy by copying to the managed hooks directory:
+The hook source lives in `brainx-v5/hook/`. Deploy by copying to the managed hooks directory:
 
 ```bash
 mkdir -p ~/.openclaw/hooks/brainx-auto-inject
-cp ~/.openclaw/skills/brainx-v4/hook/{HOOK.md,handler.js,package.json} ~/.openclaw/hooks/brainx-auto-inject/
+cp ~/.openclaw/skills/brainx-v5/hook/{HOOK.md,handler.js,package.json} ~/.openclaw/hooks/brainx-auto-inject/
 openclaw hooks enable brainx-auto-inject
 ```
 
@@ -67,6 +67,6 @@ In `openclaw.json`:
 
 ## Requirements
 
-- `DATABASE_URL` - PostgreSQL connection string (brainx_v4 database)
-- BrainX V4 skill installed at `~/.openclaw/skills/brainx-v4/`
-- `pg` module available in brainx-v4/node_modules/
+- `DATABASE_URL` - PostgreSQL connection string (brainx_v5 database)
+- BrainX V5 skill installed at `~/.openclaw/skills/brainx-v5/`
+- `pg` module available in brainx-v5/node_modules/
