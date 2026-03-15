@@ -10,7 +10,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
 
-const BRAINX_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const BRAINX_DIR = "/home/clawd/.openclaw/skills/brainx-v5";
 const brainxRequire = createRequire(path.join(BRAINX_DIR, "index.js"));
 
 // ─── Agent profiles for context-aware injection ────────────────
@@ -446,13 +446,14 @@ const handler = async (event) => {
 
     try {
       // Run all queries in parallel (team memories are now agent-aware)
-      const [teamMems, ownMems, facts, decisions, learnings] =
+      const [teamMems, ownMems, facts, decisions, learnings, gotchas] =
         await Promise.all([
           queryAgentAwareMemories(pool, agentName, { limit: 8, minImportance: 5 }),
           queryAgentMemories(pool, agentName, { limit: 5, minImportance: 5 }),
           queryFacts(pool, { limit: 25 }),
           queryByType(pool, "decision", { limit: 8, minImportance: 5 }),
           queryByType(pool, "learning", { limit: 8, minImportance: 5 }),
+          queryByType(pool, "gotcha", { limit: 10, minImportance: 3 }),
         ]);
 
       // 1. Update MEMORY.md (primary injection path)
@@ -512,7 +513,7 @@ const handler = async (event) => {
         learnings: learnings.length,
         team: teamMems.length,
         own: ownMems.length,
-        gotchas: 0,
+        gotchas: gotchas.length,
       };
 
       // 3. Write BRAINX_CONTEXT.md (compact index)
@@ -525,8 +526,8 @@ const handler = async (event) => {
         ownMems
       );
 
-      // Also write an empty gotchas topic (queried by type 'gotcha' — may not exist)
-      await writeTopicFile(topicsDir, "gotchas.md", "Gotchas & Traps", [], timestamp);
+      // Write gotchas topic with real data from DB
+      await writeTopicFile(topicsDir, "gotchas.md", "Gotchas & Traps", gotchas, timestamp);
 
       // 4. Telemetry
       await logInjection(

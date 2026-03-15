@@ -165,10 +165,10 @@ cd ~/.openclaw/skills/brainx-v5
 Agregar a `crontab -e`:
 ```bash
 # Backup diario de BrainX V5 a las 3 AM
-0 3 * * * ~/.openclaw/skills/brainx-v5/scripts/backup-brainx.sh ~/backups/brainx-v5 >> ~/backups/brainx-v5/backup.log 2>&1
+0 3 * * * /home/clawd/.openclaw/skills/brainx-v5/scripts/backup-brainx.sh /home/clawd/backups/brainx-v5 >> /home/clawd/backups/brainx-v5/backup.log 2>&1
 
 # Mantener solo los últimos 7 backups
-0 4 * * * find ~/backups/brainx-v5 -name "brainx-v5_backup_*.tar.gz" -mtime +7 -delete
+0 4 * * * find /home/clawd/backups/brainx-v5 -name "brainx-v5_backup_*.tar.gz" -mtime +7 -delete
 ```
 
 ### Backup Manual

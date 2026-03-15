@@ -1,12 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(dirname "$SCRIPT_DIR")"
+ROOT="/home/clawd/.openclaw/skills/brainx-v5"
 cd "$ROOT"
 
 load_env() {
-  for env_file in "$ROOT/.env" "$HOME/.openclaw/.env" "$HOME/.env"; do
+  for env_file in "$ROOT/.env" "/home/clawd/.openclaw/.env" "/home/clawd/.env"; do
     if [ -f "$env_file" ]; then
       set -a
       # shellcheck disable=SC1090

@@ -1,6 +1,6 @@
 # BrainX V5 Scripts Manifest
 
-Este archivo documenta los scripts de mantenimiento en `~/.openclaw/skills/brainx-v5/scripts/`.
+Este archivo documenta los scripts de mantenimiento en `/home/clawd/.openclaw/skills/brainx-v5/scripts/`.
 
 ## Leyenda de Recursos
 - **RAM**: Bajo (<100MB), Medio (100-500MB), Alto (>500MB)

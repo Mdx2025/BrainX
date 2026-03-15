@@ -78,7 +78,6 @@ async function main() {
 
     if (result.candidatesFound === 0) {
       console.log(JSON.stringify(result));
-      await db.pool.end();
       return;
     }
 

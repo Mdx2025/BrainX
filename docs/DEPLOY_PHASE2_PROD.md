@@ -12,7 +12,7 @@ Este runbook aplica **PII scrub + semantic dedupe + lifecycle automation + eval 
 ## 1) Backup (obligatorio)
 
 ```bash
-cd ~/.openclaw/skills/brainx-v5
+cd /home/clawd/.openclaw/skills/brainx-v5
 ./scripts/backup-brainx.sh
 ```
 
@@ -21,7 +21,7 @@ Guardar el path del `.sql.gz` generado para rollback.
 ## 2) Migración SQL (idempotente)
 
 ```bash
-cd ~/.openclaw/skills/brainx-v5
+cd /home/clawd/.openclaw/skills/brainx-v5
 psql "$DATABASE_URL" -f sql/migrations/2026-02-24_phase2_governance.sql
 ```
 

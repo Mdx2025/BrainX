@@ -221,3 +221,75 @@ Outputs proxy metrics including `hit_at_k_proxy`, `avg_top_similarity`, and dupl
 
 - `0` on success
 - `1` on error (prints message to stderr)
+
+## `doctor`
+
+Diagnose BrainX installation health, schema, cron, and configuration issues.
+
+```bash
+./brainx-v5 doctor [--json]
+```
+
+## `fix`
+
+Auto-fix issues detected by `doctor`.
+
+```bash
+./brainx-v5 fix [--json] [--dry-run]
+```
+
+## `fact`
+
+Shortcut to add a fact-type memory (tier: hot, category: infrastructure).
+
+```bash
+./brainx-v5 fact --content "Some important fact"
+```
+
+## `facts`
+
+List stored facts, optionally filtered by context.
+
+```bash
+./brainx-v5 facts [--context <ctx>] [--limit 30]
+```
+
+## `promote-candidates`
+
+Promote recurring memories from agent-local to global tier.
+
+```bash
+./brainx-v5 promote-candidates [--minRecurrence 3] [--days 30] [--limit 50]
+```
+
+## `lifecycle-run`
+
+Run the full memory lifecycle (promote + degrade + archive).
+
+```bash
+./brainx-v5 lifecycle-run [--promote-min-recurrence 3] [--promote-days 30] [--degrade-days 45]
+```
+
+## `advisory`
+
+Check BrainX advisories before executing a high-risk tool.
+
+```bash
+./brainx-v5 advisory --tool <tool> [--args '{}'] [--agent <agent>] [--project <project>] [--json]
+```
+
+## `advisory-feedback`
+
+Record whether an advisory was followed.
+
+```bash
+./brainx-v5 advisory-feedback --id <advisory_id> --followed yes|no [--outcome "..."]
+```
+
+## `eidos`
+
+Behavioral prediction and pattern evaluation engine.
+
+```bash
+./brainx-v5 eidos predict|evaluate|distill|stats [options]
+```
