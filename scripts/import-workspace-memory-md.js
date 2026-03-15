@@ -39,7 +39,7 @@ async function main() {
     files = [process.env.MEMORY_MD];
   } else {
     // Scan all workspace dirs for MEMORY.md
-    const wsBase = path.resolve(process.env.HOME || '', '.openclaw');
+    const wsBase = path.resolve(process.env.HOME || '/home/clawd', '.openclaw');
     const entries = fs.readdirSync(wsBase).filter(d => d.startsWith('workspace'));
     for (const dir of entries) {
       const candidate = path.join(wsBase, dir, 'MEMORY.md');
