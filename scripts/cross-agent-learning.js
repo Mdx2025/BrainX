@@ -1,23 +1,27 @@
 #!/usr/bin/env node
 /**
- * cross-agent-learning.js — BrainX V5 Phase 4.2
+ * cross-agent-learning.js — BrainX V5 Phase 4.2 (Refactored)
  *
- * Propagates high-importance learnings and gotchas from individual agents
- * to the global context so ALL agents benefit from shared discoveries.
+ * Tags high-importance learnings/gotchas from individual agents as
+ * 'cross-agent' so the hook's cross-agent query can surface them to
+ * other agents.  NO copies are created — the original memory gets the
+ * tag, preserving its real importance and agent ownership.
+ *
+ * Old approach (pre-refactor) created global copies with agent=NULL
+ * and importance-1, which polluted the own-agent bucket and were
+ * always outranked by real memories.
  *
  * Usage:
- *   node scripts/cross-agent-learning.js [--hours N] [--dry-run] [--verbose] [--max-shares N]
+ *   node scripts/cross-agent-learning.js [--hours N] [--dry-run] [--verbose] [--max-tags N]
  */
 
 'use strict';
 
 const path = require('path');
-const crypto = require('crypto');
 
 // ── Bootstrap ───────────────────────────────────────────────────────────
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const db = require(path.join(__dirname, '..', 'lib', 'db'));
-const rag = require(path.join(__dirname, '..', 'lib', 'openai-rag'));
 
 // ── Args ────────────────────────────────────────────────────────────────
 const args = process.argv.slice(2);
@@ -34,42 +38,40 @@ function option(name, fallback) {
 const HOURS = parseInt(option('hours', '24'), 10);
 const DRY_RUN = flag('dry-run');
 const VERBOSE = flag('verbose');
-const MAX_SHARES = parseInt(option('max-shares', '10'), 10);
+const MAX_TAGS = parseInt(option('max-tags', '20'), 10);
 
 function log(...a) { if (VERBOSE) console.error('[cross-agent]', ...a); }
-
-// ── Sleep helper ────────────────────────────────────────────────────────
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ── Main ────────────────────────────────────────────────────────────────
 async function main() {
   const result = {
     ok: true,
     candidatesFound: 0,
-    alreadyShared: 0,
-    newlyShared: 0,
-    skippedMaxShares: 0,
+    alreadyTagged: 0,
+    newlyTagged: 0,
+    skippedMaxTags: 0,
     bySourceAgent: {},
     errors: [],
   };
 
   try {
     // 1. Find recent high-importance learnings/gotchas from specific agents
-    log(`Searching for learnings/gotchas/decisions/facts in last ${HOURS}h with importance >= 5...`);
+    //    that don't already have the 'cross-agent' tag
+    log(`Searching for shareable memories in last ${HOURS}h...`);
 
     const candidates = await db.query(
-      `SELECT id, type, content, context, tier, importance, tags, embedding, created_at
+      `SELECT id, type, content, agent, importance, tags
        FROM brainx_memories
        WHERE superseded_by IS NULL
+         AND agent IS NOT NULL
          AND (
-           (type IN ('learning', 'gotcha') AND importance >= 5)
-           OR (type IN ('decision', 'fact') AND importance >= 6)
+           (type IN ('learning', 'gotcha') AND importance >= 7)
+           OR (type IN ('decision', 'fact') AND importance >= 8)
          )
-         AND context LIKE 'agent:%'
-         AND context != 'global'
+         AND NOT ('cross-agent' = ANY(COALESCE(tags, '{}')))
          AND created_at > NOW() - make_interval(hours => $1)
        ORDER BY importance DESC, created_at DESC
-       LIMIT 20`,
+       LIMIT 30`,
       [HOURS]
     );
 
@@ -81,74 +83,42 @@ async function main() {
       return;
     }
 
-    // 2. For each candidate, check if a global copy already exists
+    // 2. Tag originals — no copies
     for (const mem of candidates.rows) {
-      if (result.newlyShared >= MAX_SHARES) {
-        result.skippedMaxShares++;
-        log(`Max shares (${MAX_SHARES}) reached, skipping ${mem.id}`);
+      if (result.newlyTagged >= MAX_TAGS) {
+        result.skippedMaxTags++;
+        log(`Max tags (${MAX_TAGS}) reached, skipping ${mem.id}`);
         continue;
       }
 
-      // Extract agent name from context (e.g. "agent:coder" → "coder")
-      const agentName = mem.context.replace(/^agent:/, '');
-
-      // Check for existing global copy using embedding similarity
-      // The embedding column is already a vector — pass it directly
-      const existing = await db.query(
-        `SELECT id FROM brainx_memories
-         WHERE context = 'global'
-           AND superseded_by IS NULL
-           AND 1 - (embedding <=> $1) > 0.90
-         LIMIT 1`,
-        [mem.embedding]
-      );
-
-      if (existing.rows.length > 0) {
-        result.alreadyShared++;
-        log(`Already shared: ${mem.id} (matched global ${existing.rows[0].id})`);
-        continue;
-      }
-
-      // 3. Create global copy
-      const globalId = `m_global_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
-      const globalContent = `[Shared from ${mem.context}] ${mem.content}`;
-      const originalTags = Array.isArray(mem.tags) ? mem.tags : [];
-      const globalTags = [...originalTags, 'cross-agent', `origin:${mem.context}`];
-      const globalImportance = Math.max((mem.importance || 5) - 1, 5);
-
-      log(`Sharing: ${mem.id} → ${globalId} (${mem.type}, importance ${globalImportance})`);
+      const agentName = mem.agent;
+      log(`Tagging: ${mem.id} (${agentName}, ${mem.type}, imp:${mem.importance})`);
 
       if (!DRY_RUN) {
         try {
-          await rag.storeMemory({
-            id: globalId,
-            type: mem.type,
-            content: globalContent,
-            context: 'global',
-            tier: 'warm',
-            importance: globalImportance,
-            tags: globalTags,
-          });
-          log(`Stored global memory: ${globalId}`);
+          const currentTags = Array.isArray(mem.tags) ? mem.tags : [];
+          const newTags = [...currentTags, 'cross-agent'];
+
+          await db.query(
+            `UPDATE brainx_memories SET tags = $1 WHERE id = $2`,
+            [newTags, mem.id]
+          );
+          log(`Tagged: ${mem.id}`);
         } catch (err) {
           result.errors.push({ memoryId: mem.id, error: err.message });
-          log(`Error storing ${globalId}: ${err.message}`);
+          log(`Error tagging ${mem.id}: ${err.message}`);
           continue;
         }
-
-        // Rate limit: 300ms between embedding API calls
-        await sleep(300);
       } else {
-        log(`[DRY-RUN] Would share: ${mem.id} → ${globalId}`);
+        log(`[DRY-RUN] Would tag: ${mem.id}`);
       }
 
-      result.newlyShared++;
+      result.newlyTagged++;
       result.bySourceAgent[agentName] = (result.bySourceAgent[agentName] || 0) + 1;
     }
 
-    // Report
     if (DRY_RUN) {
-      log('[DRY-RUN] No memories were actually stored.');
+      log('[DRY-RUN] No memories were actually tagged.');
     }
 
     console.log(JSON.stringify(result));

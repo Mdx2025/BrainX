@@ -4,6 +4,30 @@
 
 BrainX V5 is a **persistent memory** system based on PostgreSQL + pgvector + OpenAI embeddings, designed for AI agents to remember, learn, and share knowledge across sessions.
 
+| # | Feature | Description |
+|---|---------|-------------|
+| 1 | ✅ **Production** | Active on 9 agents with centralized shared memory |
+| 2 | 🧠 **Auto-Learning** | Learns on its own from every conversation without human intervention |
+| 3 | 💾 **Persistent Memory** | Remembers across sessions — PostgreSQL + pgvector |
+| 4 | 🤝 **Shared Memory** | All agents share the same knowledge pool |
+| 5 | 💉 **Automatic Briefing** | Personalized context injection at each agent startup |
+| 6 | 🔎 **Semantic Search** | Searches by meaning, not exact keywords |
+| 7 | 🏷️ **Intelligent Classification** | Auto-typed: facts, decisions, learnings, gotchas, notes |
+| 8 | 📊 **Usage-Based Prioritization** | Hot/warm/cold tiers — automatic promote/degrade based on access |
+| 9 | 🤝 **Cross-Agent Learning** | Propagates important gotchas and learnings across all agents |
+| 10 | 🔄 **Anti-Duplicates** | Semantic deduplication by cosine similarity with intelligent merge |
+| 11 | ⚡ **Anti-Contradictions** | Detects contradictory memories and supersedes the obsolete one |
+| 12 | 📋 **Session Indexing** | Searches past conversations (30-day retention) |
+| 13 | 🔒 **PII Scrubbing** | Automatic redaction of sensitive data before storage |
+| 14 | 🔮 **Pattern Detection** | Detects recurring patterns and promotes them automatically |
+| 15 | 🛡️ **Disaster Recovery** | Full backup/restore (DB + configs + hooks + workspaces) |
+| 16 | ⭐ **Quality Scoring** | Evaluates memory quality and promotes only what deserves to persist |
+| 17 | ⚙️ **Fact Extraction** | Regex + LLM pipelines capture both operational facts and nuanced learnings |
+| 18 | 📦 **Context Packs** | Weekly project packs and bootstrap topic files for fast situational awareness |
+| 19 | 📈 **Telemetry** | Query logs, injection metrics, and health monitoring built in |
+| 20 | 🧵 **Supersede Chains** | Old memories can be replaced cleanly without losing history |
+| 21 | 🌀 **Memory Distillation** | Consolidates raw logs into higher-signal memories over time |
+
 > **Name:** The repo/CLI keeps the historical name `brainx-v5`. The current version is **BrainX V5** with governance, observability, lifecycle management, and an LLM-powered auto-feeding system.
 
 ---
@@ -99,31 +123,6 @@ Use this checklist every time the skill is updated to avoid runtime drift betwee
 - `~/.openclaw/hooks/brainx-auto-inject/agent-profiles.json`
 - `~/.openclaw/cron/jobs.json` (if scheduler topology changes)
 - `~/.openclaw/workspace/CRON.md` (if production cron behavior changes)
-
-
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | ✅ **Production** | Active on 9 agents with centralized shared memory |
-| 2 | 🧠 **Auto-Learning** | Learns on its own from every conversation without human intervention |
-| 3 | 💾 **Persistent Memory** | Remembers across sessions — PostgreSQL + pgvector |
-| 4 | 🤝 **Shared Memory** | All agents share the same knowledge pool |
-| 5 | 💉 **Automatic Briefing** | Personalized context injection at each agent startup |
-| 6 | 🔎 **Semantic Search** | Searches by meaning, not exact keywords |
-| 7 | 🏷️ **Intelligent Classification** | Auto-typed: facts, decisions, learnings, gotchas, notes |
-| 8 | 📊 **Usage-Based Prioritization** | Hot/warm/cold tiers — automatic promote/degrade based on access |
-| 9 | 🤝 **Cross-Agent Learning** | Propagates important gotchas and learnings across all agents |
-| 10 | 🔄 **Anti-Duplicates** | Semantic deduplication by cosine similarity with intelligent merge |
-| 11 | ⚡ **Anti-Contradictions** | Detects contradictory memories and supersedes the obsolete one |
-| 12 | 📋 **Session Indexing** | Searches past conversations (30-day retention) |
-| 13 | 🔒 **PII Scrubbing** | Automatic redaction of sensitive data before storage |
-| 14 | 🔮 **Pattern Detection** | Detects recurring patterns and promotes them automatically |
-| 15 | 🛡️ **Disaster Recovery** | Full backup/restore (DB + configs + hooks + workspaces) |
-| 16 | ⭐ **Quality Scoring** | Evaluates memory quality and promotes/degrades based on score |
-| 17 | 📌 **Fact Extraction** | Regex extracts URLs, repos, ports, branches, configs from sessions |
-| 18 | 📦 **Context Packs** | Weekly context packages by project and by agent |
-| 19 | 🔍 **Telemetry** | Injection logs + query performance + operational metrics |
-| 20 | 🔗 **Supersede Chain** | Obsolete memories marked, never deleted — full history |
-| 21 | 🧬 **Memory Distiller** | LLM (gpt-4.1-mini) extracts memories from session logs every 6h |
 
 ---
 
