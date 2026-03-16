@@ -98,19 +98,53 @@ async function withRetry(operation, context = "operation") {
 
 // ─── DB queries (with retry wrapper) ───────────────────────────
 
-async function queryTopMemories(pool, { limit = 8, minImportance = 5 }) {
+async function queryTopMemories(pool, { limit = 8, minImportance = 5, agentName = null }) {
+  // Split into own-agent + cross-agent slots to ensure visibility across agents
+  const crossSlots = Math.max(2, Math.floor(limit * 0.3));  // ~30% for other agents
+  const ownSlots = limit - crossSlots;
+
   return withRetry(async () => {
-    const { rows } = await pool.query(
+    // 1. Own agent memories (or global if no agent)
+    const ownFilter = agentName
+      ? `AND (agent = $3 OR agent IS NULL)`
+      : '';
+    const ownParams = agentName
+      ? [minImportance, ownSlots, agentName]
+      : [minImportance, ownSlots];
+    const { rows: ownRows } = await pool.query(
       `SELECT content, tier, importance, type, agent, context
        FROM brainx_memories
        WHERE tier IN ('hot', 'warm')
          AND importance >= $1
          AND superseded_by IS NULL
+         ${ownFilter}
        ORDER BY importance DESC, last_seen DESC NULLS LAST, created_at DESC
        LIMIT $2`,
-      [minImportance, limit]
+      ownParams
     );
-    return rows;
+
+    // 2. Cross-agent memories (from OTHER agents, prioritizing cross-agent tagged)
+    const crossFilter = agentName
+      ? `AND agent IS DISTINCT FROM $3 AND agent IS NOT NULL`
+      : '';
+    const crossParams = agentName
+      ? [minImportance, crossSlots, agentName]
+      : [minImportance, crossSlots];
+    const { rows: crossRows } = await pool.query(
+      `SELECT content, tier, importance, type, agent, context
+       FROM brainx_memories
+       WHERE tier IN ('hot', 'warm')
+         AND importance >= $1
+         AND superseded_by IS NULL
+         ${crossFilter}
+       ORDER BY
+         CASE WHEN 'cross-agent' = ANY(tags) THEN 1 ELSE 0 END DESC,
+         importance DESC, last_seen DESC NULLS LAST, created_at DESC
+       LIMIT $2`,
+      crossParams
+    );
+
+    return [...ownRows, ...crossRows];
   }, "queryTopMemories");
 }
 
@@ -176,9 +210,9 @@ function getAgentProfile(agentName) {
 async function queryAgentAwareMemories(pool, agentName, { limit = 8, minImportance = 5 }) {
   const profile = getAgentProfile(agentName);
 
-  // No profile → fall back to default top memories (original behavior)
+  // No profile → fall back to default top memories with cross-agent slots
   if (!profile || (profile.contexts.length === 0 && profile.excludeTypes.length === 0 && profile.boostTypes.length === 0)) {
-    return queryTopMemories(pool, { limit, minImportance });
+    return queryTopMemories(pool, { limit, minImportance, agentName });
   }
 
   return withRetry(async () => {
@@ -448,7 +482,7 @@ const handler = async (event) => {
       // Run all queries in parallel (team memories are now agent-aware)
       const [teamMems, ownMems, facts, decisions, learnings, gotchas] =
         await Promise.all([
-          queryAgentAwareMemories(pool, agentName, { limit: 8, minImportance: 5 }),
+          queryAgentAwareMemories(pool, agentName, { limit: 12, minImportance: 5 }),
           queryAgentMemories(pool, agentName, { limit: 5, minImportance: 5 }),
           queryFacts(pool, { limit: 25 }),
           queryByType(pool, "decision", { limit: 8, minImportance: 5 }),
