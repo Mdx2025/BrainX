@@ -331,6 +331,19 @@ Agents not listed in the profiles file get the default unfiltered injection. Edi
 
 The hook reserves ~30% of injection slots for **cross-agent memories**, ensuring each agent sees relevant learnings from other agents. The `cross-agent-learning.js` script tags high-importance memories for cross-agent visibility without creating duplicates.
 
+## Security & Trust
+
+This skill is flagged with "suspicious patterns" by ClawHub's automated scanner. Here's what each pattern does and why it's necessary:
+
+| Pattern | File | Why |
+|---|---|---|
+| `child_process.execFile` | `hook/handler.js` | Invokes the BrainX CLI to query memories during agent bootstrap. No arbitrary command execution. |
+| `process.env` access | `lib/db.js`, `lib/openai-rag.js`, `lib/cli.js` | Reads `DATABASE_URL` and `OPENAI_API_KEY` to connect to PostgreSQL and generate embeddings. Standard for any database-backed skill. |
+| `fetch('https://api.openai.com')` | `lib/openai-rag.js` | Calls OpenAI Embeddings API to generate vector representations. Single endpoint, no other network calls. |
+| File read/write | `hook/handler.js` | Writes `BRAINX_CONTEXT.md` and updates `MEMORY.md` in the agent's workspace during bootstrap injection. |
+
+**No secrets are stored in code.** All credentials come from environment variables. No data leaves the system except embedding requests to OpenAI.
+
 ## Notes
 
 - Memories are stored with vector embeddings (1536 dimensions)
