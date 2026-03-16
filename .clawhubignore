@@ -2,7 +2,12 @@
 .git/
 data/
 node_modules/
+backups/
+BRAINX_CONTEXT.md
+brainx-topics/
 cron/*.log
+cron/health.log
+cron/cron-output.log
 tests/fixtures/memory-eval-real.jsonl
 package-lock.json
 pnpm-lock.yaml
