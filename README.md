@@ -8,11 +8,11 @@
 
 BrainX V5 is a **persistent memory and vector database system** for AI agents, built on PostgreSQL + pgvector + OpenAI embeddings. It gives every OpenClaw agent the ability to remember, learn, and share knowledge across sessions — delivering true **AI agent memory**, **cross-agent learning**, and **semantic search** at production scale.
 
-> **2,400+ active memories · 32 agent profiles · 18/18 doctor checks passing · Version 0.3.0**
+> **Production-tested · 30+ agent profiles supported · 18/18 doctor checks · Version 0.3.0**
 
 | # | Feature | Description |
 |---|---------|-------------|
-| 1 | ✅ **Production** | Active on 32 agent profiles with centralized shared memory |
+| 1 | ✅ **Production** | Active with centralized shared memory across all agents |
 | 2 | 🧠 **Auto-Learning** | Learns on its own from every conversation without human intervention |
 | 3 | 💾 **Persistent Memory** | Remembers across sessions — PostgreSQL + pgvector vector database |
 | 4 | 🤝 **Shared Memory** | All agents share the same knowledge management pool |
@@ -34,7 +34,7 @@ BrainX V5 is a **persistent memory and vector database system** for AI agents, b
 | 20 | 🧵 **Supersede Chains** | Old memories can be replaced cleanly without losing history |
 | 21 | 🌀 **Memory Distillation** | Consolidates raw logs into higher-signal memories over time |
 | 22 | 🛡️ **Pre-Action Advisory** | Queries past mistakes before high-risk tool execution (exec, deploy, delete) |
-| 23 | 👤 **Agent Profiles** | Per-agent hook injection: boosts/filters memories by agent role — 32 profiles |
+| 23 | 👤 **Agent Profiles** | Per-agent hook injection: boosts/filters memories by agent role |
 | 24 | 🔀 **Cross-Agent Injection Slots** | Hook reserves 30% of context slots for other agents' memories |
 | 25 | 📊 **Metrics Dashboard** | CLI dashboard with top patterns, memory stats, and usage trends |
 | 26 | 🔧 **Doctor & Auto-Fix** | Schema integrity check + automatic repair of detected issues (18/18 passing) |
@@ -61,9 +61,9 @@ BrainX V5 is a **persistent memory and vector database system** for AI agents, b
 BrainX V5 is fully validated and production-tested:
 
 - **18/18 doctor checks passing** — database, schema, embeddings, hooks, and pipeline all green
-- **10+ agents smoke-tested** — bootstrap injection, context generation, and telemetry confirmed working
+- **Multi-agent smoke-tested** — bootstrap injection, context generation, and telemetry confirmed working
 - **Cross-agent injection** active — agents receive relevant memories from other agents (30% injection slots)
-- **32 agent profiles** configured with role-specific boosting and filtering
+- **Agent profiles** configured with role-specific boosting and filtering
 
 Run `./brainx-v5 doctor` anytime to verify your installation health.
 
@@ -81,18 +81,12 @@ After updating BrainX V5, sync the managed hook to prevent runtime drift:
    - Update `hook/HOOK.md` if deployment steps change
    - Update `CRON.md` if production scheduler topology changed
 
-### Never skip these files when updating BrainX V5
+### Key files to keep in sync
 
-- `~/.openclaw/skills/brainx-v5/README.md`
-- `~/.openclaw/skills/brainx-v5/lib/doctor.js`
-- `~/.openclaw/skills/brainx-v5/hook/HOOK.md`
-- `~/.openclaw/skills/brainx-v5/hook/handler.js`
-- `~/.openclaw/skills/brainx-v5/hook/agent-profiles.json`
-- `~/.openclaw/hooks/brainx-auto-inject/HOOK.md`
-- `~/.openclaw/hooks/brainx-auto-inject/handler.js`
-- `~/.openclaw/hooks/brainx-auto-inject/agent-profiles.json`
-- `~/.openclaw/cron/jobs.json` (if scheduler topology changes)
-- `~/.openclaw/workspace/CRON.md` (if production cron behavior changes)
+When updating BrainX V5, ensure these stay aligned:
+- Skill source files: `README.md`, `lib/doctor.js`, `hook/*`
+- Managed hook: the deployed copy of hook files in your OpenClaw hooks directory
+- Cron config: if you change the pipeline schedule or steps
 
 ---
 
@@ -181,11 +175,11 @@ BrainX captures memories through **4 complementary mechanisms** working in paral
 | Mechanism | How it works | What it captures | Frequency |
 |-----------|--------------|-----------------|-----------|
 | **Memory Distiller** (`scripts/memory-distiller.js`) | LLM (gpt-4.1-mini) reads full session transcripts | Preferences, decisions, personal/technical/financial data — ALL memory types | Every 6h |
-| **Fact Extractor** (`scripts/fact-extractor.js`) | Regex patterns extract structured data | Production URLs, Railway services, GitHub repos, ports, branches, configs | Every 6h |
+| **Fact Extractor** (`scripts/fact-extractor.js`) | Regex patterns extract structured data | Production URLs, services, repos, ports, branches, configs | Every 6h |
 | **Session Harvester** (`scripts/session-harvester.js`) | Heuristics and regex classify conversations | Conversation patterns, recurring topics, operational context | Every 4h |
 | **Memory Bridge** (`scripts/memory-bridge.js`) | Syncs markdown files to vector database | Manual notes in `memory/*.md`, documentation, written decisions | Every 6h |
 
-**Real example:** An agent discusses a Railway deployment with Marcelo. Without anyone doing anything:
+**Real example:** An agent discusses a deployment with the user. Without anyone doing anything:
 - The **Fact Extractor** captures the service URL and repo name
 - The **Memory Distiller** extracts the decision to use that service and why
 - The **Memory Bridge** syncs the daily notes
@@ -211,10 +205,10 @@ BrainX captures memories through **4 complementary mechanisms** working in paral
 
 **Real example:**
 ```
-Coder discovers: "Railway CLI v4.29 requires --detach for background deploys"
+Coder discovers: "CLI tool v4.29 requires --detach for background deploys"
     ↓ cross-agent-learning.js (daily cron)
     ↓
-Researcher, Writer, Main, Raider → all receive this gotcha
+All other agents → receive this gotcha automatically
     ↓
 No agent makes that mistake again
 ```
@@ -339,7 +333,7 @@ Where:
 
 **Example:**
 ```
-Memory: "Railway CLI requires --detach for deploys"
+Memory: "CLI tool requires --detach for deploys"
   → Appears in 3 different sessions from 3 agents
   → recurrence_count = 3
   → Auto-promote: importance 6 → 7
@@ -462,7 +456,7 @@ BrainX V5 operates in **3 feeding layers** working together:
 ┌───────────────────────▼─────────────────────────────────────┐
 │               LAYER 1: Fact Extractor (regex)               │
 │  scripts/fact-extractor.js — no LLM                        │
-│  → Extracts URLs (Railway, Vercel, GitHub)                  │
+│  → Extracts URLs (services, repos, deployments)                  │
 │  → Detects services, repos, ports, branches                 │
 │  → Fast, no API cost                                        │
 │  → Complements the distiller for structured data            │
@@ -556,10 +550,10 @@ The CLI (`lib/cli.js`) provides all commands to interact with BrainX. The entry 
 |------|----------|-------------|
 | `--type` | ✅ | Memory type (see Types section) |
 | `--content` | ✅ | Text content of the memory |
-| `--context` | ❌ | Namespace: `agent:coder`, `project:emailbot`, `personal:finances` |
+| `--context` | ❌ | Namespace: `agent:coder`, `project:my-project`, `personal:finances` |
 | `--tier` | ❌ | `hot` \| `warm` \| `cold` \| `archive` (default: `warm`) |
 | `--importance` | ❌ | 1-10 (default: 5) |
-| `--tags` | ❌ | Comma-separated tags: `railway,deploy,url` |
+| `--tags` | ❌ | Comma-separated tags: `deploy,service,url` |
 | `--agent` | ❌ | Name of the agent creating the memory |
 | `--id` | ❌ | Custom ID (auto-generated if omitted) |
 | `--status` | ❌ | `pending` \| `in_progress` \| `resolved` \| `promoted` \| `wont_fix` |
@@ -574,23 +568,23 @@ The CLI (`lib/cli.js`) provides all commands to interact with BrainX. The entry 
 The `fact` type is a shortcut for `add --type fact --tier hot --category infrastructure`.
 
 ```bash
-# Register a Railway URL
+# Register a service URL
 ./brainx-v5 fact \
-  --content "Frontend emailbot: https://emailbot-frontend.up.railway.app" \
-  --context "project:emailbot" \
+  --content "Frontend my-project: https://my-app-frontend.example.com" \
+  --context "project:my-project" \
   --importance 8
 
 # Register service config
 ./brainx-v5 fact \
-  --content "Railway service 'emailbot-api' → port 3001, branch main" \
-  --context "project:emailbot" \
+  --content "Service 'my-api' → port 3001, branch main" \
+  --context "project:my-project" \
   --importance 7 \
-  --tags railway,config
+  --tags service,config
 ```
 
 **What is a FACT?** Hard data that another agent would need to work without asking:
 - Production/staging URLs
-- Railway service ↔ repo ↔ directory mapping
+- Service ↔ repo ↔ directory mapping
 - Key environment variables
 - Project structure
 - Main branch, deploy target
@@ -603,7 +597,7 @@ The `fact` type is a shortcut for `add --type fact --tier hot --category infrast
 ./brainx-v5 facts
 
 # Filter by context
-./brainx-v5 facts --context "project:emailbot"
+./brainx-v5 facts --context "project:my-project"
 
 # Limit results
 ./brainx-v5 facts --limit 5
@@ -631,7 +625,7 @@ Shortcut for: `add --type feature_request --tier warm --importance 6 --category 
 ./brainx-v5 features --status pending
 
 # Filter by context
-./brainx-v5 features --context "project:emailbot" --limit 10
+./brainx-v5 features --context "project:my-project" --limit 10
 ```
 
 ### `search` — Semantic search
@@ -641,7 +635,7 @@ Shortcut for: `add --type feature_request --tier warm --importance 6 --category 
   --query "deploy strategy" \
   --limit 10 \
   --minSimilarity 0.15 \
-  --context "project:emailbot" \
+  --context "project:my-project" \
   --tier hot
 ```
 
@@ -734,9 +728,9 @@ Returns:
 |------|-------------|---------|
 | `fact` | Concrete operational data | URLs, services, configs, personal data, finances |
 | `decision` | Decisions made | "We use gpt-4.1-mini for the distiller" |
-| `learning` | Things discovered/learned | "Railway doesn't support websockets on free plan" |
+| `learning` | Things discovered/learned | "Service X doesn't support websockets on free plan" |
 | `gotcha` | Traps to avoid | "Don't use `rm -rf` without confirming path first" |
-| `action` | Actions executed | "Deployed emailbot v2.3 to production" |
+| `action` | Actions executed | "Deployed my-project v2.3 to production" |
 | `note` | General notes | "The client prefers morning meetings" |
 | `feature_request` | Requested/planned features | "Add webhook support in v3" |
 
@@ -1153,10 +1147,10 @@ Fast regex-based extractor that complements the Memory Distiller. No LLM, so it'
 
 | Pattern | Example |
 |---------|---------|
-| Railway URLs | `https://emailbot.up.railway.app` |
+| Service URLs | `https://my-app.example.com` |
 | Vercel URLs | `https://app.vercel.app` |
 | GitHub repos | `github.com/user/repo` |
-| Service mappings | `service emailbot-api → backend` |
+| Service mappings | `service my-api → backend` |
 | Ports and configs | `PORT=3001`, `NODE_ENV=production` |
 | Branches | `branch: main`, `deploy target: staging` |
 
@@ -1441,9 +1435,9 @@ node scripts/promotion-applier.js --apply --verbose
 ```
 [promotion-applier] Found 3 pending promotion suggestions
 [promotion-applier] Distilling: "Use plugin v2 for WordPress publishing" → target: TOOLS.md
-[promotion-applier] Writing rule to ~/.openclaw/workspace/TOOLS.md
-[promotion-applier] Distilling: "Always verify Railway token before deploy" → target: AGENTS.md
-[promotion-applier] Writing rule to ~/.openclaw/workspace/AGENTS.md
+[promotion-applier] Writing rule to TOOLS.md
+[promotion-applier] Distilling: "Always verify auth token before deploy" → target: AGENTS.md
+[promotion-applier] Writing rule to AGENTS.md
 [promotion-applier] Done: 2 applied, 1 skipped (below min-recurrence), 0 failed
 ```
 
