@@ -163,22 +163,18 @@ async function main() {
     console.log('⚠️  These are suggestions only. Review and manually add to workspace files if appropriate.');
   }
 
-  // Save suggestions as memories
+  // Save suggestions as memories (direct DB insert, no CLI spawn per item)
   if (args.save && !args.dryRun) {
     let saved = 0;
     for (const s of suggestions) {
       const content = `[PROMOTION SUGGESTION] → ${s.target.file}\nRule: ${s.rule}\nReason: ${s.target.reason}\nRecurrence: ${s.recurrence}x\nSource: ${s.source} (${s.patternKey || s.memoryId || 'unknown'})`;
+      const id = `m_promo_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
       try {
-        execFileSync(BRAINX_CLI, [
-          'add',
-          '--type', 'decision',
-          '--content', content,
-          '--tier', 'warm',
-          '--importance', '7',
-          '--category', 'best_practice',
-          '--tags', 'promotion-suggestion,auto-promoter',
-          '--sourceKind', 'agent_inference',
-        ], { encoding: 'utf8', timeout: 15000 });
+        await db.query(`
+          INSERT INTO brainx_memories (id, content, type, tier, importance, category, tags, source_kind, agent, status, created_at, last_seen)
+          VALUES ($1, $2, 'decision', 'warm', 7, 'best_practice', $3, 'agent_inference', 'system', 'pending', NOW(), NOW())
+          ON CONFLICT DO NOTHING
+        `, [id, content, '{promotion-suggestion,auto-promoter}']);
         saved++;
       } catch (e) {
         console.error(`  ⚠️ Failed to save suggestion: ${e.message?.slice(0, 100)}`);

@@ -351,7 +351,7 @@ async function main() {
     }
 
     try {
-      if (args.verbose) process.stderr.write(`[distiller] Processing ${session.agent}/${session.sessionId} (${transcript.length} chars)...\n`);
+      process.stderr.write(`[distiller] [${summary.processed + 1}/${toProcess.length}] ${session.agent}/${session.sessionId} (${transcript.length} chars)...\n`);
 
       const { memories, usage, parseError } = await callLLM(transcript, args.model);
 
@@ -381,6 +381,7 @@ async function main() {
       }
 
       summary.processed++;
+      process.stderr.write(`[distiller] ✓ ${session.agent}/${session.sessionId}: ${memories.length} memories extracted\n`);
 
       // Track this session as distilled
       if (!args.dryRun) {

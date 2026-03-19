@@ -22,11 +22,11 @@ user-invocable: true
 
 Persistent memory system using vector embeddings for contextual retrieval in AI agents.
 
-## 35 Features
+## 37 Features
 
 | # | Feature | Description |
 |---|---------|-------------|
-| 1 | ✅ **Production** | Active on 10+ agents with centralized shared memory |
+| 1 | ✅ **Production** | Active on 32 agent profiles with centralized shared memory (2,400+ memories) |
 | 2 | 🧠 **Auto-Learning** | Learns on its own from every conversation without human intervention |
 | 3 | 💾 **Persistent Memory** | Remembers across sessions — PostgreSQL + pgvector |
 | 4 | 🤝 **Shared Memory** | All agents share the same knowledge pool |
@@ -61,6 +61,8 @@ Persistent memory system using vector embeddings for contextual retrieval in AI 
 | 33 | 🏗️ **Session Snapshots** | Captures full agent state at session close for analysis |
 | 34 | 🧹 **Low-Signal Cleanup** | Automatic cleanup of low-value, outdated, or redundant memories |
 | 35 | 🔃 **Memory Reclassification** | Reclassifies memories with correct types and categories post-hoc |
+| 36 | 🔄 **Auto-Promotion Pipeline** | Detects high-recurrence patterns and promotes them as rules in workspace files automatically |
+| 37 | 📊 **15-Step Daily Pipeline** | Consolidated daily pipeline: bootstrap, lifecycle, distiller, harvester, bridge, auto-distiller, consolidation, cross-agent, contradiction, md-harvester, error-harvester, auto-promoter, promotion-applier, memory-enforcer, audit |
 
 ## When to Use
 
@@ -81,10 +83,15 @@ BrainX V5 includes an **OpenClaw hook** that automatically injects relevant memo
 
 ### Production Validation Status
 
-Real validation completed on **2026-03-16**:
+Real validation completed on **2026-03-18**:
 - Global hook enabled in `~/.openclaw/openclaw.json`
-- Managed hook synced with `~/.openclaw/skills/brainx-v5/hook/`
+- Managed hook synced with `~/.openclaw/skills/brainx-v5/hook/` (handler.js re-synced)
 - Active physical database: `brainx_v5`
+- agent-profiles.json expanded from 10 to 32 profiles (all agents)
+- Cross-agent injection slots (30%) activated in production
+- 20 null embeddings regenerated + 17 duplicate pairs deduped via `brainx fix`
+- 2 pending migrations applied
+- Doctor: 18/18 passed, 0 warnings
 - Real bootstrap smoke test passed for 10 agents
 - Expected evidence confirmed:
   - `<!-- BRAINX:START -->` block written into `MEMORY.md`
@@ -358,7 +365,7 @@ This skill is flagged with "suspicious patterns" by ClawHub's automated scanner.
 ### ✅ All Operational
 | Table | Function | Status |
 |---|---|---|
-| `brainx_memories` | Core: stores memories with embeddings | ✅ Active (2000+) |
+| `brainx_memories` | Core: stores memories with embeddings | ✅ Active (2,400+) |
 | `brainx_query_log` | Tracks search/inject queries | ✅ Active |
 | `brainx_pilot_log` | Tracks auto-inject per agent | ✅ Active |
 | `brainx_context_packs` | Pre-generated context packages | ✅ Active |
@@ -410,13 +417,15 @@ This skill is flagged with "suspicious patterns" by ClawHub's automated scanner.
 | 30 | `memory-feedback.js` | Per-memory feedback system |
 | 31 | `import-workspace-memory-md.js` | Imports from workspace MEMORY.md files |
 | 32 | `migrate-v2-to-v3.js` | Schema migration V2→V3 |
+| 33 | `promotion-applier.js` | Last-mile auto-promotion: distills patterns via LLM and writes rules to workspace files |
 
 ### Hooks and Infrastructure
 | # | Component | Function |
 |---|---|---|
-| 33 | `brainx-auto-inject` | Auto-injection hook at each agent bootstrap |
-| 34 | `backup-brainx.sh` | Full backup (DB + config + skills) |
-| 35 | `restore-brainx.sh` | Full restore from backup |
+| 34 | `brainx-auto-inject` | Auto-injection hook at each agent bootstrap |
+| 35 | `backup-brainx.sh` | Full backup (DB + config + skills) |
+| 36 | `restore-brainx.sh` | Full restore from backup |
+| 37 | `promotion-applier.js` | Pipeline step 13: writes promoted patterns to workspace files |
 
 ### V5 Metadata
 - `sourceKind` — Origin: user_explicit, agent_inference, tool_verified, llm_distilled, etc.
