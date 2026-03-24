@@ -38,6 +38,32 @@ function loadEnv() {
   } catch {}
 }
 
+// ─── Singleton pool ────────────────────────────────────────────
+
+let _pool = null;
+let _poolUrl = null;
+
+function getPool(dbUrl) {
+  if (_pool && _poolUrl === dbUrl) return _pool;
+  if (_pool) { _pool.end().catch(() => {}); }
+  try {
+    const { Pool } = brainxRequire("pg");
+    _pool = new Pool({ connectionString: dbUrl, max: 3, idleTimeoutMillis: 30000 });
+    _poolUrl = dbUrl;
+    _pool.on("error", (err) => {
+      console.error("[brainx-inject] Pool background error:", err.message);
+      _pool = null;
+      _poolUrl = null;
+    });
+    return _pool;
+  } catch (err) {
+    console.error("[brainx-inject] Failed to create pool:", err.message);
+    _pool = null;
+    _poolUrl = null;
+    throw err;
+  }
+}
+
 // ─── Helpers ───────────────────────────────────────────────────
 
 function extractAgentId(sessionKey) {
@@ -526,10 +552,9 @@ const handler = async (event) => {
     const agentName = event.agentId || event.agent || extractAgentId(event.sessionKey) || process.env.OPENCLAW_AGENT_ID || 'unknown';
     const timestamp = ts();
 
-    const { Pool } = brainxRequire("pg");
-    const pool = new Pool({ connectionString: dbUrl });
+    const pool = getPool(dbUrl);
 
-    try {
+    {
       // Run all queries in parallel (team memories are now agent-aware)
       const [teamMems, ownMems, facts, decisions, learnings, gotchas] =
         await Promise.all([
@@ -627,8 +652,6 @@ const handler = async (event) => {
       console.log(
         `[brainx-inject] agent=${agentName} team=${teamMems.length} own=${ownMems.length} facts=${facts.length} decisions=${decisions.length} ${elapsed}ms`
       );
-    } finally {
-      await pool.end();
     }
   } catch (err) {
     const elapsed = Date.now() - t0;

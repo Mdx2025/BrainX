@@ -4,11 +4,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![OpenClaw Compatible](https://img.shields.io/badge/OpenClaw-Compatible-blue.svg)](https://openclaw.ai)
-[![Version](https://img.shields.io/badge/version-0.3.0-green.svg)](https://github.com/Mdx2025/brainx-v5)
+[![Version](https://img.shields.io/badge/version-0.3.1-green.svg)](https://github.com/Mdx2025/brainx-v5)
 
 BrainX V5 is a **persistent memory and vector database system** for AI agents, built on PostgreSQL + pgvector + OpenAI embeddings. It gives every OpenClaw agent the ability to remember, learn, and share knowledge across sessions — delivering true **AI agent memory**, **cross-agent learning**, and **semantic search** at production scale.
 
-> **Production-tested · 30+ agent profiles supported · 18/18 doctor checks · Version 0.3.0**
+> **Production-tested · 30+ agent profiles supported · 18/18 doctor checks · Version 0.3.1**
 
 | # | Feature | Description |
 |---|---------|-------------|
@@ -50,7 +50,7 @@ BrainX V5 is a **persistent memory and vector database system** for AI agents, b
 | 36 | 🔄 **Auto-Promotion Pipeline** | Detects high-recurrence patterns and automatically promotes them as rules in agent workspace files (AGENTS.md, TOOLS.md, SOUL.md). Closes the learning → rule loop without human intervention. |
 | 37 | 📊 **15-Step Daily Pipeline** | Consolidated daily pipeline running 15 automated steps: bootstrap, lifecycle, distiller, harvester, bridge, auto-distiller, consolidation, cross-agent learning, contradiction detection, markdown harvester, error harvester, auto-promoter, promotion-applier, memory-enforcer, and audit. |
 
-> **Name:** The repo/CLI keeps the historical name `brainx-v5`. The current version is **BrainX V5** (v0.3.0) with governance, observability, lifecycle management, auto-promotion pipeline, and an LLM-powered auto-feeding system.
+> **Name:** The repo/CLI keeps the historical name `brainx-v5`. The current version is **BrainX V5** (v0.3.1) with governance, observability, lifecycle management, auto-promotion pipeline, and an LLM-powered auto-feeding system.
 
 ---
 
