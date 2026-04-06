@@ -28,7 +28,7 @@ Treat this as a grouped capability map, not as 39 unrelated product bullets. In 
 
 | # | Feature | Description |
 |---|---------|-------------|
-| 1 | ✅ **Production** | Active on 33 agent profiles with centralized shared memory (3,400+ active memories) |
+| 1 | ✅ **Production-Ready** | Centralized shared memory across all your agents — scales from 1 to hundreds |
 | 2 | 🧠 **Auto-Learning** | Captures and curates memory automatically from conversations, with review gates where durable rule writes would be risky |
 | 3 | 💾 **Persistent Memory** | Remembers across sessions — PostgreSQL + pgvector |
 | 4 | 🤝 **Shared Memory** | All agents share the same knowledge pool |

@@ -10,11 +10,11 @@
 
 **Why BrainX?** Without persistent memory, every AI session starts from zero. Agents forget past decisions, repeat mistakes, and lose context. BrainX solves this with a fully automated memory lifecycle — from real-time capture to semantic retrieval to cross-agent knowledge propagation. Your agents get smarter with every conversation, permanently.
 
-> **Production-tested · 39 agent profiles · 3,400+ active memories · Version 0.4.0**
+> **Production-tested · Unlimited agent profiles · Auto-learning · Version 0.4.0**
 
 | # | Feature | Description |
 |---|---------|-------------|
-| 1 | ✅ **Production** | Active on 39 agent profiles with centralized shared memory (3,400+ active memories) |
+| 1 | ✅ **Production-Ready** | Centralized shared memory across all your agents — scales from 1 to hundreds |
 | 2 | 🧠 **Auto-Learning** | Learns on its own from every conversation without human intervention |
 | 3 | 💾 **Persistent Memory** | Remembers across sessions — PostgreSQL + pgvector vector database |
 | 4 | 🤝 **Shared Memory** | All agents share the same knowledge management pool |
@@ -54,7 +54,7 @@
 | 38 | ⚡ **Near-Real-Time Live Capture** | Captures high-signal outbound recommendations at `message:sent` into workspace daily memory and BrainX before compaction or cron distillation |
 | 39 | 📡 **Live Capture Observability** | `doctor` and `metrics` expose live-capture volume, low-signal skips, duplicates, persistence failures, latency, and last success/error |
 
-> **Name:** The repo/CLI keeps the historical name `brainx-v5`. The current version is **BrainX V5** (v0.4.0) with 39 differentiated agent profiles, verification states, live capture, review-gated promotions, and an optimized 10+8 pipeline.
+> **Name:** The repo/CLI keeps the historical name `brainx-v5`. The current version is **BrainX V5** (v0.4.0) with differentiated agent profiles, verification states, live capture, review-gated promotions, and an optimized 10+8 pipeline.
 
 ---
 
@@ -75,7 +75,7 @@ AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
 ```
 
 ### New Features
-- **39 differentiated agent profiles** — Replaced 33 identical profiles with role-specific configurations. Technical agents prioritize gotchas/infrastructure; writers prioritize business/client context; researchers get the broadest context with highest cross-agent ratio.
+- **Differentiated agent profiles** — Role-specific configurations replace one-size-fits-all injection. Technical agents prioritize gotchas/infrastructure; writers prioritize business/client context; researchers get the broadest context with highest cross-agent ratio.
 - **Near-real-time live capture** — New `brainx-live-capture` hook captures high-signal recommendations at `message:sent`, before cron distillation.
 - **Verification states** — Every memory carries a trust state (`verified`, `hypothesis`, `changelog`, `obsolete`) used by retrieval and injection ranking.
 - **Pipeline optimized** — Restructured from 16 to 10 daily steps + 8 weekly Sunday steps. Estimated runtime reduced from ~120s to ~75s.
@@ -89,8 +89,8 @@ AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
 BrainX V5 is fully validated and production-tested:
 
 - **All doctor checks passing** — database, schema, embeddings, hooks, pipeline, and live capture all green
-- **39 differentiated agent profiles** — role-specific context injection with custom scoring weights
-- **3,400+ active memories** in production with verification state governance
+- **Differentiated agent profiles** — role-specific context injection with custom scoring weights
+- **Verification state governance** — memories carry trust states that control retrieval ranking
 - **Cross-agent learning active** — verified and hypothesis memories propagate across agents
 - **Live capture operational** — near-real-time memory persistence at `message:sent`
 

@@ -11,7 +11,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Critical Bug Fixes
 
 - **Stale memory injection** — All 5 hook query functions (`queryTopMemories`, `queryAgentMemories`, `queryByType`, `queryFacts`, `queryScopedMemories`) now filter out resolved, expired, and obsolete memories. Previously, a memory with `status='resolved'` would keep being injected into agent context indefinitely, causing agents to act on already-fixed issues.
-- **Cross-agent learning unblocked** — Relaxed `verification_state` filter from `= 'verified'` to `IN ('verified', 'hypothesis')`. The old filter rejected 99.6% of candidates; only 2 memories had ever been tagged cross-agent out of 3,400+.
+- **Cross-agent learning unblocked** — Relaxed `verification_state` filter from `= 'verified'` to `IN ('verified', 'hypothesis')`. The old filter rejected 99.6% of candidates; very few memories had ever been tagged cross-agent under the old filter.
 - **Auto-promotion unblocked** — Expanded `source_kind` whitelist from `('consolidated', 'llm_distilled')` to include `auto_harvested`, `memory_bridge`, `agent_inference`, `tool_verified`, `regex_extraction`. The old whitelist matched 0 real memories, so auto-promotion never found candidates.
 
 ### Security Audit — Standardized Injection Filters
@@ -29,7 +29,7 @@ AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
 
 ### Added
 
-- **39 differentiated agent profiles** — Replaced 33 identical profiles with role-specific configurations. 22 unique context sets, 11 unique boost sets, 21 agents with cross-agent enabled (was 0). Technical agents prioritize gotchas/infrastructure; writers prioritize business/client; researchers get broadest context with highest cross-agent ratio (0.30).
+- **Differentiated agent profiles** — Replaced identical one-size-fits-all profiles with role-specific configurations. Each profile gets unique context sets, boost sets, and cross-agent ratios. Technical agents prioritize gotchas/infrastructure; writers prioritize business/client; researchers get broadest context.
 - **4 missing agent profiles** — Added `claude`, `codex`, `gemini`, `kimi`, `opencode` profiles for bare CLI workspaces that were falling back to DEFAULT_SAFE_PROFILE.
 - **Advisory trajectory staleness guard** — `queryTrajectories` now limits to last 180 days, preventing advisories based on years-old problem-solution paths.
 - **Advisory pattern memory filters** — `queryPatterns` JOIN now filters the representative memory by `superseded_by`, `status`, and `expires_at`, preventing pattern advisories backed by stale memories.
@@ -54,7 +54,7 @@ AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
 - Added `lib/live-capture-stats.js` so the runtime hook, `doctor`, and `metrics` share the same live-capture telemetry parser/writer.
 
 ### Changed
-- Standardized the OpenClaw bootstrap policy to a single generic baseline across all 32 agent profiles, avoiding premature per-agent specialization.
+- Standardized the OpenClaw bootstrap policy to a single generic baseline across all agent profiles, avoiding premature per-agent specialization.
 - The auto-inject hook now hot-reloads `hook/agent-profiles.json` on every bootstrap and applies `scoringWeights` as real weighted ranking signals instead of decorative metadata.
 - `doctor` now validates live-capture deployment, managed-hook sync, and recent runtime telemetry (`seen`, `captured`, `low_signal`, `duplicate`, failures, latency, last success/error).
 - `metrics` now includes a `live_capture` section with the same observability surface used by `doctor`.
@@ -82,8 +82,8 @@ AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
 ### Fixed
 - Closed the bootstrap side-door where `learnings.md` could still reintroduce noisy context.
 - Reduced harvester overclassification of debugging narration into durable `learning`.
-- Cleaned the historical promotion backlog down to reviewed outcomes only: `68 promoted`, `53 wont_fix`, `0 pending`.
-- Second-pass calibration promoted `66` durable memories from `changelog` to `verified`, bringing the verified pool to `312`.
+- Cleaned the historical promotion backlog down to reviewed outcomes only.
+- Second-pass calibration promoted durable memories from `changelog` to `verified`, expanding the verified pool significantly.
 - Demoted `13` stale hot/warm memories to `cold`, clearing the last doctor warning and leaving the baseline at `26 passed`.
 
 ## [0.3.5] - 2026-03-24
@@ -100,9 +100,9 @@ AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
 
 ### Fixed
 - **Singleton pool**: Refactored hook handler to use singleton PostgreSQL pool with try-catch, preventing connection leaks on bootstrap.
-- **PII password scrub**: Added Spanish/English password regexes, scrubbed 24 memories containing secrets.
+- **PII password scrub**: Added Spanish/English password regexes to scrub secrets from memories.
 - **Search defense-in-depth**: Added null embedding filter on search results.
-- **Stale memory cleanup**: Demoted 17 low-signal memories via lifecycle promotion/demotion run.
+- **Stale memory cleanup**: Demoted low-signal memories via lifecycle promotion/demotion run.
 - **DATABASE_URL**: Added to central `~/.openclaw/.env` so hook loads reliably after gateway restart.
 
 ### Changed
@@ -118,7 +118,7 @@ AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
 ### Added
 - **Promotion applier**: Auto-promotes recurring BrainX patterns to AGENTS.md/TOOLS.md per agent.
 - **15-step pipeline**: Full memory lifecycle from ingestion to promotion.
-- **32 agent profiles**: Expanded from 10 to 32 profiles for hook injection.
+- **Expanded agent profiles**: Support for many more agent profiles with hook injection.
 
 ### Fixed
 - Sanitized README — removed personal data, internal paths, and operational details.
