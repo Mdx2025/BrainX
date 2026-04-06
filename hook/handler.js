@@ -18,12 +18,31 @@ const brainxRequire = createRequire(path.join(BRAINX_DIR, "index.js"));
 import { readFileSync } from "node:fs";
 
 let agentProfiles = {};
-try {
-  const raw = readFileSync(path.join(BRAINX_DIR, 'hook', 'agent-profiles.json'), 'utf-8');
-  agentProfiles = JSON.parse(raw);
-} catch {
-  // No profiles file — all agents get default (unfiltered) injection
+const AGENT_PROFILES_PATH = path.join(BRAINX_DIR, "hook", "agent-profiles.json");
+
+function refreshAgentProfiles() {
+  try {
+    const raw = readFileSync(AGENT_PROFILES_PATH, "utf-8");
+    agentProfiles = JSON.parse(raw);
+  } catch {
+    // No profiles file — all agents get default (unfiltered) injection
+    agentProfiles = {};
+  }
 }
+
+const DEFAULT_SAFE_PROFILE = {
+  contexts: [],
+  excludeTypes: ["learning", "note"],
+  boostTypes: ["fact", "decision", "gotcha"],
+  scoringWeights: {
+    recency: 0.2,
+    relevance: 0.5,
+    importance: 0.3,
+  },
+  allowCrossAgent: false,
+  crossAgentTagRequired: true,
+  crossAgentRatio: 0,
+};
 
 // Section markers for MEMORY.md — content between these is replaced each run
 const BRAINX_START = "<!-- BRAINX:START -->";
@@ -81,6 +100,32 @@ function truncate(str, max = 150) {
   return str.slice(0, max - 3) + "...";
 }
 
+function getUtcDateOffset(days = 0) {
+  const date = new Date(Date.now() + (days * 24 * 60 * 60 * 1000));
+  return date.toISOString().slice(0, 10);
+}
+
+function renderDailyMemoryStub(date) {
+  return `# ${date}\n\n## Index\n| # | Type | Summary |\n|---|------|---------|\n`;
+}
+
+async function ensureDailyMemoryFiles(workspaceDir) {
+  const memoryDir = path.join(workspaceDir, "memory");
+  await fs.mkdir(memoryDir, { recursive: true });
+
+  for (const date of [getUtcDateOffset(0), getUtcDateOffset(-1)]) {
+    const filePath = path.join(memoryDir, `${date}.md`);
+    try {
+      await fs.writeFile(filePath, renderDailyMemoryStub(date), {
+        encoding: "utf-8",
+        flag: "wx"
+      });
+    } catch (err) {
+      if (err?.code !== "EEXIST") throw err;
+    }
+  }
+}
+
 // ─── Retry helpers ─────────────────────────────────────────────
 
 const MAX_RETRIES = 3;
@@ -125,7 +170,8 @@ async function withRetry(operation, context = "operation") {
 // ─── DB queries (with retry wrapper) ───────────────────────────
 
 async function queryTopMemories(pool, { limit = 8, minImportance = 5, agentName = null }) {
-  // Split into own-agent + cross-agent slots to ensure visibility across agents
+  // Legacy helper kept for compatibility. The active bootstrap path is now
+  // local-first and leaves cross-agent retrieval for explicit fallback recall.
   const crossSlots = Math.max(2, Math.floor(limit * 0.3));  // ~30% for other agents
   const ownSlots = limit - crossSlots;
 
@@ -143,6 +189,9 @@ async function queryTopMemories(pool, { limit = 8, minImportance = 5, agentName 
        WHERE tier IN ('hot', 'warm')
          AND importance >= $1
          AND superseded_by IS NULL
+         AND COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
          ${ownFilter}
        ORDER BY importance DESC, last_seen DESC NULLS LAST, created_at DESC
        LIMIT $2`,
@@ -162,6 +211,9 @@ async function queryTopMemories(pool, { limit = 8, minImportance = 5, agentName 
        WHERE tier IN ('hot', 'warm')
          AND importance >= $1
          AND superseded_by IS NULL
+         AND COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
          ${crossFilter}
        ORDER BY
          CASE WHEN 'cross-agent' = ANY(tags) THEN 1 ELSE 0 END DESC,
@@ -180,15 +232,26 @@ async function queryAgentMemories(
   { limit = 5, minImportance = 5 }
 ) {
   return withRetry(async () => {
+    const allowedStates = ["verified", "changelog"];
     const { rows } = await pool.query(
       `SELECT content, tier, importance, type, context
        FROM brainx_memories
        WHERE agent = $1
          AND importance >= $2
+         AND COALESCE(verification_state, 'hypothesis') = ANY($3::text[])
          AND superseded_by IS NULL
-       ORDER BY importance DESC, last_seen DESC NULLS LAST
-       LIMIT $3`,
-      [agentName, minImportance, limit]
+         AND COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
+       ORDER BY
+         CASE COALESCE(verification_state, 'hypothesis')
+           WHEN 'verified' THEN 1
+           WHEN 'changelog' THEN 0
+           ELSE -1
+         END DESC,
+         importance DESC, last_seen DESC NULLS LAST
+       LIMIT $4`,
+      [agentName, minImportance, allowedStates, limit]
     );
     return rows;
   }, "queryAgentMemories");
@@ -203,6 +266,9 @@ async function queryByType(pool, type, { limit = 10, minImportance = 5 }) {
          AND tier IN ('hot', 'warm')
          AND importance >= $2
          AND superseded_by IS NULL
+         AND COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
        ORDER BY importance DESC, last_seen DESC NULLS LAST
        LIMIT $3`,
       [type, minImportance, limit]
@@ -219,6 +285,9 @@ async function queryFacts(pool, { limit = 25 }) {
        WHERE type = 'fact'
          AND superseded_by IS NULL
          AND tier IN ('hot', 'warm')
+         AND COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')
+         AND (expires_at IS NULL OR expires_at > NOW())
+         AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
        ORDER BY importance DESC, last_seen DESC NULLS LAST
        LIMIT $1`,
       [limit]
@@ -230,104 +299,257 @@ async function queryFacts(pool, { limit = 25 }) {
 // ─── Agent-aware query (uses agent-profiles.json) ──────────────
 
 function getAgentProfile(agentName) {
-  return agentProfiles[agentName] || null;
+  return agentProfiles[agentName] || DEFAULT_SAFE_PROFILE;
+}
+
+function normalizeScoringWeights(rawWeights) {
+  const defaults = DEFAULT_SAFE_PROFILE.scoringWeights;
+  const candidates = rawWeights && typeof rawWeights === "object" ? rawWeights : {};
+  const weights = {
+    recency:
+      typeof candidates.recency === "number" && Number.isFinite(candidates.recency) && candidates.recency >= 0
+        ? candidates.recency
+        : defaults.recency,
+    relevance:
+      typeof candidates.relevance === "number" && Number.isFinite(candidates.relevance) && candidates.relevance >= 0
+        ? candidates.relevance
+        : defaults.relevance,
+    importance:
+      typeof candidates.importance === "number" && Number.isFinite(candidates.importance) && candidates.importance >= 0
+        ? candidates.importance
+        : defaults.importance,
+  };
+
+  const total = weights.recency + weights.relevance + weights.importance;
+  if (total <= 0) {
+    return { ...defaults };
+  }
+
+  return {
+    recency: weights.recency / total,
+    relevance: weights.relevance / total,
+    importance: weights.importance / total,
+  };
+}
+
+function normalizeAgentProfile(agentName) {
+  const raw = getAgentProfile(agentName) || DEFAULT_SAFE_PROFILE;
+  const contexts = Array.isArray(raw.contexts) ? raw.contexts.filter(Boolean) : [];
+  const excludeTypes = Array.isArray(raw.excludeTypes) ? raw.excludeTypes.filter(Boolean) : [];
+  const boostTypes = Array.isArray(raw.boostTypes) ? raw.boostTypes.filter(Boolean) : [];
+  const scoringWeights = normalizeScoringWeights(raw.scoringWeights);
+  const allowCrossAgent = raw.allowCrossAgent === true;
+  const crossAgentTagRequired = raw.crossAgentTagRequired !== false;
+  const ratio =
+    typeof raw.crossAgentRatio === "number" && Number.isFinite(raw.crossAgentRatio)
+      ? raw.crossAgentRatio
+      : 0.3;
+  const crossAgentRatio = Math.max(0, Math.min(0.5, ratio));
+
+  return {
+    contexts,
+    excludeTypes,
+    boostTypes,
+    scoringWeights,
+    allowCrossAgent,
+    crossAgentTagRequired,
+    crossAgentRatio,
+  };
+}
+
+function computeSlotPlan(limit, profile) {
+  if (!profile.allowCrossAgent || limit <= 1) {
+    return { ownSlots: Math.max(limit, 0), crossSlots: 0 };
+  }
+
+  const desiredCross = Math.floor(limit * profile.crossAgentRatio);
+  const crossSlots = Math.max(1, Math.min(limit - 1, desiredCross));
+  const ownSlots = Math.max(limit - crossSlots, 1);
+  return { ownSlots, crossSlots };
+}
+
+function buildProfileQueryParts(profile, startParamIdx) {
+  let paramIdx = startParamIdx;
+  const params = [];
+  const filters = [];
+
+  if (profile.excludeTypes.length > 0) {
+    const placeholders = profile.excludeTypes.map(() => `$${paramIdx++}`).join(",");
+    params.push(...profile.excludeTypes);
+    filters.push(`type NOT IN (${placeholders})`);
+  }
+
+  let contextScoreExpr = "0.0";
+  if (profile.contexts.length > 0) {
+    const conditions = [];
+    const scoreTerms = [];
+    for (const contextTerm of profile.contexts) {
+      const placeholder = `$${paramIdx++}`;
+      const condition = `LOWER(COALESCE(context, '')) LIKE LOWER(${placeholder})`;
+      conditions.push(condition);
+      scoreTerms.push(`CASE WHEN ${condition} THEN 1 ELSE 0 END`);
+      params.push(`%${contextTerm}%`);
+    }
+    const combinedConditions = conditions.join(" OR ");
+    filters.push(`(${combinedConditions})`);
+    contextScoreExpr = `((${scoreTerms.join(" + ")})::float / ${profile.contexts.length})`;
+  }
+
+  let boostTypeScoreExpr = "0.0";
+  if (profile.boostTypes.length > 0) {
+    const placeholders = profile.boostTypes.map(() => `$${paramIdx++}`).join(",");
+    params.push(...profile.boostTypes);
+    boostTypeScoreExpr = `CASE WHEN type IN (${placeholders}) THEN 1.0 ELSE 0.0 END`;
+  }
+
+  const relevanceSignals = [];
+  if (profile.contexts.length > 0) relevanceSignals.push(contextScoreExpr);
+  if (profile.boostTypes.length > 0) relevanceSignals.push(boostTypeScoreExpr);
+  const relevanceScoreExpr =
+    relevanceSignals.length > 0
+      ? `((${relevanceSignals.join(" + ")}) / ${relevanceSignals.length})`
+      : "0.0";
+
+  return {
+    filters,
+    params,
+    nextParamIdx: paramIdx,
+    relevanceScoreExpr,
+  };
+}
+
+function buildWeightedScoreExpr(profile, queryParts) {
+  const recencyScoreExpr = `EXP(
+    -GREATEST(
+      EXTRACT(EPOCH FROM (NOW() - COALESCE(last_seen, created_at))) / 86400.0,
+      0
+    ) / 30.0
+  )`;
+  const importanceScoreExpr = `LEAST(GREATEST(importance, 0), 10)::float / 10.0`;
+  const weights = profile.scoringWeights || DEFAULT_SAFE_PROFILE.scoringWeights;
+
+  return `(
+    (${weights.relevance} * ${queryParts.relevanceScoreExpr}) +
+    (${weights.importance} * ${importanceScoreExpr}) +
+    (${weights.recency} * ${recencyScoreExpr})
+  )`;
+}
+
+async function queryScopedMemories(
+  pool,
+  agentName,
+  { limit = 8, minImportance = 5, type = null, profile = null, strictVerified = false }
+) {
+  const normalizedProfile = profile || normalizeAgentProfile(agentName);
+  const { ownSlots, crossSlots } = computeSlotPlan(limit, normalizedProfile);
+
+  return withRetry(async () => {
+    const runScopedQuery = async ({ scope, slotLimit }) => {
+      if (slotLimit <= 0) return [];
+
+      let paramIdx = 1;
+      const params = [];
+      const where = [
+        `tier IN ('hot', 'warm')`,
+        `importance >= $${paramIdx++}`,
+        `superseded_by IS NULL`,
+        `COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')`,
+        `(expires_at IS NULL OR expires_at > NOW())`,
+      ];
+      params.push(minImportance);
+
+      if (type) {
+        where.push(`type = $${paramIdx++}`);
+        params.push(type);
+      }
+
+      const allowedStates = strictVerified || scope === "cross"
+        ? ["verified"]
+        : ["verified", "changelog"];
+      where.push(`COALESCE(verification_state, 'hypothesis') = ANY($${paramIdx++}::text[])`);
+      params.push(allowedStates);
+
+      const queryParts = buildProfileQueryParts(normalizedProfile, paramIdx);
+      paramIdx = queryParts.nextParamIdx;
+      params.push(...queryParts.params);
+      where.push(...queryParts.filters);
+      const weightedScoreExpr = buildWeightedScoreExpr(normalizedProfile, queryParts);
+
+      if (scope === "own") {
+        if (agentName && agentName !== "unknown") {
+          where.push(`(agent = $${paramIdx++} OR agent IS NULL)`);
+          params.push(agentName);
+        } else {
+          where.push(`agent IS NULL`);
+        }
+      } else {
+        if (!normalizedProfile.allowCrossAgent) return [];
+        if (agentName && agentName !== "unknown") {
+          where.push(`agent IS DISTINCT FROM $${paramIdx++} AND agent IS NOT NULL`);
+          params.push(agentName);
+        } else {
+          where.push(`agent IS NOT NULL`);
+        }
+        if (normalizedProfile.crossAgentTagRequired) {
+          where.push(`'cross-agent' = ANY(COALESCE(tags, '{}'))`);
+        }
+      }
+
+      const order = [];
+      if (scope === "cross" && !normalizedProfile.crossAgentTagRequired) {
+        order.push(`CASE WHEN 'cross-agent' = ANY(COALESCE(tags, '{}')) THEN 1 ELSE 0 END DESC`);
+      }
+      order.push(`CASE COALESCE(verification_state, 'hypothesis') WHEN 'verified' THEN 1 ELSE 0 END DESC`);
+      order.push(`${weightedScoreExpr} DESC`);
+      order.push(`importance DESC`);
+      order.push(`last_seen DESC NULLS LAST`);
+      order.push(`created_at DESC`);
+
+      const limitParam = `$${paramIdx++}`;
+      params.push(slotLimit);
+
+      const sql = `SELECT content, tier, importance, type, agent, context
+       FROM brainx_memories
+       WHERE ${where.join("\n         AND ")}
+       ORDER BY ${order.join(", ")}
+       LIMIT ${limitParam}`;
+
+      const { rows } = await pool.query(sql, params);
+      return rows;
+    };
+
+    const ownRows = await runScopedQuery({ scope: "own", slotLimit: ownSlots });
+    const crossRows =
+      crossSlots > 0
+        ? await runScopedQuery({ scope: "cross", slotLimit: crossSlots })
+        : [];
+
+    return [...ownRows, ...crossRows];
+  }, type ? `queryScopedMemories:${type}` : "queryScopedMemories");
 }
 
 async function queryAgentAwareMemories(pool, agentName, { limit = 8, minImportance = 5 }) {
-  const profile = getAgentProfile(agentName);
+  return queryScopedMemories(pool, agentName, {
+    limit,
+    minImportance,
+    profile: normalizeAgentProfile(agentName),
+    strictVerified: true,
+  });
+}
 
-  // No profile → fall back to default top memories with cross-agent slots
-  if (!profile || (profile.contexts.length === 0 && profile.excludeTypes.length === 0 && profile.boostTypes.length === 0)) {
-    return queryTopMemories(pool, { limit, minImportance, agentName });
-  }
-
-  // Split into own-agent + cross-agent slots (same strategy as queryTopMemories)
-  const crossSlots = Math.max(2, Math.floor(limit * 0.3));
-  const ownSlots = limit - crossSlots;
-
-  return withRetry(async () => {
-    // Build shared clauses from profile
-    let excludeClause = '';
-    const sharedParams = [];
-    let paramIdx = 3; // $1=minImportance, $2=limit
-
-    if (profile.excludeTypes.length > 0) {
-      excludeClause = ` AND type NOT IN (${profile.excludeTypes.map(() => `$${paramIdx++}`).join(',')})`;
-      sharedParams.push(...profile.excludeTypes);
-    }
-
-    let contextBoostExpr = '0';
-    if (profile.contexts.length > 0) {
-      const contextPlaceholders = profile.contexts.map(() => `$${paramIdx++}`).join(',');
-      sharedParams.push(...profile.contexts);
-      contextBoostExpr = `CASE WHEN context IN (${contextPlaceholders}) THEN 2 ELSE 0 END`;
-    }
-
-    let boostTypeExpr = '0';
-    if (profile.boostTypes.length > 0) {
-      const boostPlaceholders = profile.boostTypes.map(() => `$${paramIdx++}`).join(',');
-      sharedParams.push(...profile.boostTypes);
-      boostTypeExpr = `CASE WHEN type IN (${boostPlaceholders}) THEN 1 ELSE 0 END`;
-    }
-
-    // 1. Own-agent memories (agent = agentName OR agent IS NULL)
-    const ownAgentParam = paramIdx++;
-    const ownParams = [minImportance, ownSlots, ...sharedParams, agentName];
-    const ownSql = `SELECT content, tier, importance, type, agent, context
-       FROM brainx_memories
-       WHERE tier IN ('hot', 'warm')
-         AND importance >= $1
-         AND superseded_by IS NULL
-         AND (agent = $${ownAgentParam} OR agent IS NULL)
-         ${excludeClause}
-       ORDER BY (${contextBoostExpr} + ${boostTypeExpr}) DESC,
-                importance DESC,
-                last_seen DESC NULLS LAST,
-                created_at DESC
-       LIMIT $2`;
-    const { rows: ownRows } = await pool.query(ownSql, ownParams);
-
-    // 2. Cross-agent memories (from other agents)
-    // Reset paramIdx for cross query
-    let crossParamIdx = 3;
-    const crossSharedParams = [];
-    let crossExcludeClause = '';
-    if (profile.excludeTypes.length > 0) {
-      crossExcludeClause = ` AND type NOT IN (${profile.excludeTypes.map(() => `$${crossParamIdx++}`).join(',')})`;
-      crossSharedParams.push(...profile.excludeTypes);
-    }
-    let crossContextBoost = '0';
-    if (profile.contexts.length > 0) {
-      const cp = profile.contexts.map(() => `$${crossParamIdx++}`).join(',');
-      crossSharedParams.push(...profile.contexts);
-      crossContextBoost = `CASE WHEN context IN (${cp}) THEN 2 ELSE 0 END`;
-    }
-    let crossBoostType = '0';
-    if (profile.boostTypes.length > 0) {
-      const bp = profile.boostTypes.map(() => `$${crossParamIdx++}`).join(',');
-      crossSharedParams.push(...profile.boostTypes);
-      crossBoostType = `CASE WHEN type IN (${bp}) THEN 1 ELSE 0 END`;
-    }
-    const crossAgentParam = crossParamIdx++;
-    const crossParams = [minImportance, crossSlots, ...crossSharedParams, agentName];
-    const crossSql = `SELECT content, tier, importance, type, agent, context
-       FROM brainx_memories
-       WHERE tier IN ('hot', 'warm')
-         AND importance >= $1
-         AND superseded_by IS NULL
-         AND agent IS DISTINCT FROM $${crossAgentParam} AND agent IS NOT NULL
-         ${crossExcludeClause}
-       ORDER BY
-         CASE WHEN 'cross-agent' = ANY(tags) THEN 1 ELSE 0 END DESC,
-         (${crossContextBoost} + ${crossBoostType}) DESC,
-         importance DESC,
-         last_seen DESC NULLS LAST,
-         created_at DESC
-       LIMIT $2`;
-    const { rows: crossRows } = await pool.query(crossSql, crossParams);
-
-    return [...ownRows, ...crossRows];
-  }, "queryAgentAwareMemories");
+async function queryAgentAwareByType(
+  pool,
+  agentName,
+  type,
+  { limit = 10, minImportance = 5 }
+) {
+  return queryScopedMemories(pool, agentName, {
+    limit,
+    minImportance,
+    type,
+    profile: normalizeAgentProfile(agentName),
+    strictVerified: true,
+  });
 }
 
 // ─── Formatting ────────────────────────────────────────────────
@@ -387,7 +609,7 @@ function buildMemorySection(agentName, timestamp, teamMems, ownMems) {
   }
 
   lines.push(
-    `> Full context: \`cat BRAINX_CONTEXT.md\` | Topics: \`cat brainx-topics/<topic>.md\``
+    `> Full context: \`cat BRAINX_CONTEXT.md\` | Topics: \`cat brainx-topics/<topic>.md\` | Canonical docs: \`brainx knowledge-locate --query "<task>"\``
   );
   lines.push("", BRAINX_END);
   return lines.join("\n");
@@ -446,8 +668,10 @@ async function writeBrainxContext(
   timestamp,
   counts,
   facts,
-  ownMems
+  ownMems,
+  options = {}
 ) {
+  const includeLearnings = options.includeLearnings === true;
   const topicsDir = path.join(workspaceDir, "brainx-topics");
   const contextPath = path.join(workspaceDir, "BRAINX_CONTEXT.md");
 
@@ -457,6 +681,7 @@ async function writeBrainxContext(
     "",
     `**Agent:** ${agentName} | **Updated:** ${timestamp}`,
     "**Mode:** Compact index — read topic files with `cat brainx-topics/<file>.md` when you need detail",
+    '**Task-specific canonical docs:** use `brainx knowledge-locate --query "<task>"` and read the suggested `.md` files in full before drafting when precision matters',
     "",
   ];
 
@@ -497,9 +722,11 @@ async function writeBrainxContext(
   lines.push(
     `| Gotchas | ${counts.gotchas} | \`brainx-topics/gotchas.md\` |`
   );
-  lines.push(
-    `| Learnings | ${counts.learnings} | \`brainx-topics/learnings.md\` |`
-  );
+  if (includeLearnings) {
+    lines.push(
+      `| Learnings | ${counts.learnings} | \`brainx-topics/learnings.md\` |`
+    );
+  }
   lines.push(`| Team | ${counts.team} | \`brainx-topics/team.md\` |`);
   lines.push(`| Facts | ${counts.facts} | \`brainx-topics/facts.md\` |`);
   lines.push(`| Own | ${counts.own} | \`brainx-topics/own.md\` |`);
@@ -535,12 +762,7 @@ const handler = async (event) => {
 
   try {
     loadEnv();
-
-    const dbUrl = process.env.DATABASE_URL;
-    if (!dbUrl) {
-      console.error("[brainx-inject] DATABASE_URL not set, skipping");
-      return;
-    }
+    refreshAgentProfiles();
 
     const workspaceDir = event.context?.workspaceDir;
     if (!workspaceDir) {
@@ -548,29 +770,41 @@ const handler = async (event) => {
       return;
     }
 
+    await ensureDailyMemoryFiles(workspaceDir);
+
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) {
+      console.error("[brainx-inject] DATABASE_URL not set, skipping");
+      return;
+    }
+
     // Extract agent ID from multiple sources (event context, session key, env)
     const agentName = event.agentId || event.agent || extractAgentId(event.sessionKey) || process.env.OPENCLAW_AGENT_ID || 'unknown';
     const timestamp = ts();
+    const includeLearnings = process.env.BRAINX_BOOTSTRAP_INCLUDE_LEARNINGS === "true";
 
     const pool = getPool(dbUrl);
 
     {
       // Run all queries in parallel (team memories are now agent-aware)
-      const [teamMems, ownMems, facts, decisions, learnings, gotchas] =
+      const [topMems, ownMems, facts, decisions, learnings, gotchas] =
         await Promise.all([
-          queryAgentAwareMemories(pool, agentName, { limit: 12, minImportance: 5 }),
+          queryAgentAwareMemories(pool, agentName, { limit: 12, minImportance: 7 }),
           queryAgentMemories(pool, agentName, { limit: 5, minImportance: 5 }),
-          queryFacts(pool, { limit: 25 }),
-          queryByType(pool, "decision", { limit: 8, minImportance: 5 }),
-          queryByType(pool, "learning", { limit: 8, minImportance: 5 }),
-          queryByType(pool, "gotcha", { limit: 10, minImportance: 3 }),
+          queryAgentAwareByType(pool, agentName, "fact", { limit: 25, minImportance: 5 }),
+          queryAgentAwareByType(pool, agentName, "decision", { limit: 8, minImportance: 5 }),
+          includeLearnings
+            ? queryAgentAwareByType(pool, agentName, "learning", { limit: 8, minImportance: 5 })
+            : Promise.resolve([]),
+          queryAgentAwareByType(pool, agentName, "gotcha", { limit: 10, minImportance: 3 }),
         ]);
+      const crossTeamMems = topMems.filter((m) => m.agent && m.agent !== agentName);
 
       // 1. Update MEMORY.md (primary injection path)
       const memSection = buildMemorySection(
         agentName,
         timestamp,
-        teamMems,
+        topMems,
         ownMems
       );
       await updateMemoryMd(workspaceDir, memSection);
@@ -594,18 +828,20 @@ const handler = async (event) => {
           decisions,
           timestamp
         ),
-        writeTopicFile(
-          topicsDir,
-          "learnings.md",
-          "Learnings & Insights",
-          learnings,
-          timestamp
-        ),
+        includeLearnings
+          ? writeTopicFile(
+              topicsDir,
+              "learnings.md",
+              "Learnings & Insights",
+              learnings,
+              timestamp
+            )
+          : Promise.resolve(0),
         writeTopicFile(
           topicsDir,
           "team.md",
           "Team Knowledge (High Importance)",
-          teamMems,
+          crossTeamMems,
           timestamp
         ),
         writeTopicFile(
@@ -621,7 +857,7 @@ const handler = async (event) => {
         facts: facts.length,
         decisions: decisions.length,
         learnings: learnings.length,
-        team: teamMems.length,
+        team: crossTeamMems.length,
         own: ownMems.length,
         gotchas: gotchas.length,
       };
@@ -633,7 +869,8 @@ const handler = async (event) => {
         timestamp,
         counts,
         facts,
-        ownMems
+        ownMems,
+        { includeLearnings }
       );
 
       // Write gotchas topic with real data from DB
@@ -644,13 +881,13 @@ const handler = async (event) => {
         pool,
         agentName,
         ownMems.length,
-        teamMems.length,
+        crossTeamMems.length,
         memSection.length + indexChars
       );
 
       const elapsed = Date.now() - t0;
       console.log(
-        `[brainx-inject] agent=${agentName} team=${teamMems.length} own=${ownMems.length} facts=${facts.length} decisions=${decisions.length} ${elapsed}ms`
+        `[brainx-inject] agent=${agentName} team=${crossTeamMems.length} own=${ownMems.length} facts=${facts.length} decisions=${decisions.length} ${elapsed}ms`
       );
     }
   } catch (err) {

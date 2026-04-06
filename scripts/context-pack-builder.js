@@ -48,6 +48,9 @@ async function main() {
     FROM brainx_memories
     WHERE superseded_by IS NULL
       AND tier IN ('hot', 'warm')
+      AND COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')
+      AND (expires_at IS NULL OR expires_at > NOW())
+      AND COALESCE(verification_state, 'hypothesis') != 'obsolete'
       AND created_at > NOW() - $1::interval
     ORDER BY importance DESC, created_at DESC
   `, [`${DAYS} days`]);

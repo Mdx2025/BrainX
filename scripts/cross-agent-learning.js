@@ -65,9 +65,12 @@ async function main() {
        WHERE superseded_by IS NULL
          AND agent IS NOT NULL
          AND (
-           (type IN ('learning', 'gotcha') AND importance >= 7)
+           (type = 'gotcha' AND importance >= 7)
            OR (type IN ('decision', 'fact') AND importance >= 8)
          )
+         AND COALESCE(verification_state, 'hypothesis') IN ('verified', 'hypothesis')
+         AND COALESCE(status, 'pending') NOT IN ('resolved', 'wont_fix')
+         AND (expires_at IS NULL OR expires_at > NOW())
          AND NOT ('cross-agent' = ANY(COALESCE(tags, '{}')))
          AND created_at > NOW() - make_interval(hours => $1)
        ORDER BY importance DESC, created_at DESC
