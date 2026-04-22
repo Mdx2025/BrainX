@@ -20,7 +20,7 @@ const rag = require('../lib/openai-rag');
 
 // ── Config ──────────────────────────────────────────
 const SESSION_DIRS = [
-  path.join(process.env.HOME || '/home/clawd', '.openclaw', 'agents')
+  path.join(process.env.OPENCLAW_HOME || path.join(process.env.HOME || '', '.openclaw'), 'agents')
 ];
 const DEDUPE_THRESHOLD = parseFloat(process.env.BRAINX_DEDUPE_SIM_THRESHOLD || '0.92');
 

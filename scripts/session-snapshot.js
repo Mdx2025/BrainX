@@ -9,6 +9,25 @@
  *   node scripts/session-snapshot.js [--hours 6] [--max-sessions 10] [--verbose]
  */
 
+const argv = process.argv.slice(2);
+
+function printUsage() {
+  console.log(`Usage:
+  node scripts/session-snapshot.js [--hours 6] [--max-sessions 10] [--verbose]
+
+Options:
+  --hours <n>         Look back this many hours for recently modified sessions
+  --max-sessions <n>  Process at most this many sessions
+  --verbose           Print progress to stderr
+  -h, --help          Show this help message
+`);
+}
+
+if (argv.includes('--help') || argv.includes('-h')) {
+  printUsage();
+  process.exit(0);
+}
+
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const fs = require('fs');
@@ -30,7 +49,6 @@ const pool = new Pool({ connectionString: DATABASE_URL });
 
 // --- CLI args ---
 function parseArgs() {
-  const argv = process.argv.slice(2);
   const args = { hours: 6, maxSessions: 10, verbose: false };
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === '--hours') args.hours = parseInt(argv[++i], 10) || 6;
@@ -173,7 +191,7 @@ function detectProject(text) {
   const lower = text.toLowerCase();
   const patterns = [
     { match: /brainx/i, name: 'brainx' },
-    { match: /openclaw|clawd|clawma/i, name: 'openclaw' },
+    { match: /openclaw|agent|workspace/i, name: 'openclaw' },
     { match: /mdx|closer.?academy|edzaya/i, name: 'mdx' },
     { match: /emailbot|gmail.*autom/i, name: 'emailbot' },
     { match: /notion.*crm|lead.*gen/i, name: 'lead-gen' },

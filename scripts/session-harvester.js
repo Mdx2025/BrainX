@@ -31,6 +31,9 @@ function parseArgs() {
     else if (argv[i] === '--verbose') args.verbose = true;
     else if (argv[i] === '--min-chars') args.minChars = parseInt(argv[++i], 10);
     else if (argv[i] === '--max-memories') args.maxMemories = parseInt(argv[++i], 10);
+    else if (argv[i] === '--dedup-similarity') args.dedupSimilarity = parseFloat(argv[++i]);
+    else if (argv[i] === '--dedup-window-hours') args.dedupWindowHours = parseInt(argv[++i], 10);
+    else if (argv[i] === '--no-semantic-dedup') args.noSemanticDedup = true;
   }
   return {
     hours: args.hours || 4,
@@ -39,6 +42,9 @@ function parseArgs() {
     verbose: args.verbose || false,
     minChars: args.minChars || 120,
     maxMemories: args.maxMemories || 40,
+    dedupSimilarity: Number.isFinite(args.dedupSimilarity) ? args.dedupSimilarity : 0.88,
+    dedupWindowHours: args.dedupWindowHours || 24,
+    noSemanticDedup: args.noSemanticDedup || false,
   };
 }
 
@@ -143,16 +149,16 @@ function classifyMessage(text) {
   const RULES = [
     // Decisions
     { match: /(?:decid|decisión|decidimos|elegimos|vamos a usar|switched to|migrat|adoptamos|en vez de|reemplaz)/i, type: 'decision', importance: 7 },
-    { match: /(?:la solución|the fix|se resolvió|fix(?:ed|eado)|corregido|arreglado|el problema era)/i, type: 'learning', importance: 7, category: 'error' },
+    { match: /(?:la solución|the fix|se resolvió|fix(?:ed|eado)|corregido|arreglado|el problema era)/i, type: 'note', importance: 5, category: 'error' },
     
     // Errors / debugging
-    { match: /(?:error|fail|crash|bug|broke|fallo|falló|roto|no funciona|se cayó|exception|stack trace)/i, type: 'learning', importance: 6, category: 'error' },
+    { match: /(?:error|fail|crash|bug|broke|fallo|falló|roto|no funciona|se cayó|exception|stack trace)/i, type: 'note', importance: 4, category: 'error' },
     
     // Gotchas / warnings
     { match: /(?:gotcha|cuidado|watch out|careful|trap|caveat|ojo con|no usar|avoid|nunca|prohibido)/i, type: 'gotcha', importance: 7, category: 'correction' },
     
     // Learnings / discoveries
-    { match: /(?:aprendí|descubrí|resulta que|turns out|actually|en realidad|lo que pasa|the issue was|root cause)/i, type: 'learning', importance: 6, category: 'learning' },
+    { match: /(?:aprendí|descubrí|resulta que|turns out|actually|en realidad|lo que pasa|the issue was|root cause)/i, type: 'learning', importance: 5, category: 'learning' },
     
     // Best practices
     { match: /(?:best practice|patrón|convention|siempre|always|nunca|never|regla|rule|estándar)/i, type: 'note', importance: 6, category: 'best_practice' },
@@ -199,6 +205,39 @@ function getRag() {
   return _rag;
 }
 
+// Semantic dedup: check if a similar memory already exists within recent window.
+// Returns { duplicate: true, matchedId, similarity } if found, else { duplicate: false }.
+async function checkSemanticDuplicate(content, { similarityThreshold, windowHours }) {
+  try {
+    const rag = getRag();
+    const results = await rag.search(content, {
+      limit: 3,
+      minSimilarity: similarityThreshold,
+      minImportance: 0,
+    });
+    if (!Array.isArray(results) || results.length === 0) {
+      return { duplicate: false };
+    }
+    const cutoffMs = Date.now() - windowHours * 60 * 60 * 1000;
+    for (const row of results) {
+      const sim = Number(row?.similarity ?? 0);
+      if (sim < similarityThreshold) continue;
+      // Honor recency window: only treat as duplicate if the existing memory
+      // was created/last_accessed within the window. This way older memories
+      // (>24h) won't suppress harvesting fresh signal.
+      const ts = row?.created_at || row?.last_accessed;
+      const tsMs = ts ? Date.parse(ts) : 0;
+      if (tsMs && tsMs >= cutoffMs) {
+        return { duplicate: true, matchedId: row.id, similarity: sim };
+      }
+    }
+    return { duplicate: false };
+  } catch {
+    // On error, fail open (don't block storage)
+    return { duplicate: false };
+  }
+}
+
 async function storeToBrainx(memory, dryRun) {
   if (dryRun) return { ok: true, dryRun: true };
 
@@ -237,6 +276,7 @@ async function main() {
     messagesSkipped: 0,
     memoriesStored: 0,
     memoriesFailed: 0,
+    memoriesDeduped: 0,
     candidatesTotal: 0,
     candidatesCapped: false,
     byAgent: {},
@@ -290,17 +330,34 @@ async function main() {
   summary.candidatesCapped = candidates.length > args.maxMemories;
   const toStore = candidates.slice(0, args.maxMemories);
 
-  // Phase 3: Store to BrainX (with rate limiting)
+  // Phase 3: Store to BrainX (with rate limiting + semantic dedup)
   for (const cand of toStore) {
+    const truncated = truncateContent(cand.text);
     const memory = {
       type: cand.classification.type,
-      content: truncateContent(cand.text),
+      content: truncated,
       context: `agent:${cand.agent}`,
       tier: cand.classification.importance >= 7 ? 'hot' : 'warm',
       importance: cand.classification.importance,
       category: cand.classification.category,
       tags: ['auto-harvested', `agent:${cand.agent}`, `session:${cand.sessionId.slice(0, 8)}`],
     };
+
+    // Semantic dedup against recent memories (skips storing near-duplicates already
+    // captured by distiller/bridge/other harvester runs in the last N hours).
+    if (!args.dryRun && !args.noSemanticDedup) {
+      const dedup = await checkSemanticDuplicate(truncated, {
+        similarityThreshold: args.dedupSimilarity,
+        windowHours: args.dedupWindowHours,
+      });
+      if (dedup.duplicate) {
+        summary.memoriesDeduped++;
+        if (args.verbose) {
+          console.error(`[${cand.agent}] DEDUP (sim=${dedup.similarity.toFixed(3)} matched=${dedup.matchedId}): ${truncated.slice(0, 80)}...`);
+        }
+        continue;
+      }
+    }
 
     if (!args.dryRun) {
       await new Promise(r => setTimeout(r, 250));

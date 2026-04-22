@@ -1,5 +1,5 @@
 /**
- * BrainX V5 Auto-Inject Hook Handler
+ * BrainX Auto-Inject Hook Handler
  *
  * Runs on agent:bootstrap — queries PostgreSQL for hot/warm memories
  * and injects them into the agent's MEMORY.md + BRAINX_CONTEXT.md.
@@ -9,8 +9,9 @@ import { createRequire } from "module";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { execFile } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
-const BRAINX_DIR = "/home/clawd/.openclaw/skills/brainx-v5";
+const BRAINX_DIR = process.env.BRAINX_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const brainxRequire = createRequire(path.join(BRAINX_DIR, "index.js"));
 
 // ─── Agent profiles for context-aware injection ────────────────
@@ -92,12 +93,24 @@ function extractAgentId(sessionKey) {
 }
 
 function ts() {
-  return new Date().toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC");
+  // Keep the timestamp stable within the same day to reduce prompt-cache churn.
+  return new Date().toISOString().slice(0, 10);
 }
 
 function truncate(str, max = 150) {
   if (!str || str.length <= max) return str || "";
   return str.slice(0, max - 3) + "...";
+}
+
+async function writeIfChanged(filePath, newContent) {
+  try {
+    const existing = await fs.readFile(filePath, "utf-8");
+    if (existing === newContent) return false;
+  } catch {
+    // File does not exist yet.
+  }
+  await fs.writeFile(filePath, newContent, "utf-8");
+  return true;
 }
 
 function getUtcDateOffset(days = 0) {
@@ -419,9 +432,11 @@ function buildProfileQueryParts(profile, startParamIdx) {
 }
 
 function buildWeightedScoreExpr(profile, queryParts) {
+  // Stabilize recency ranking within the current hour to avoid noisy reorderings
+  // between nearby bootstraps.
   const recencyScoreExpr = `EXP(
     -GREATEST(
-      EXTRACT(EPOCH FROM (NOW() - COALESCE(last_seen, created_at))) / 86400.0,
+      EXTRACT(EPOCH FROM (DATE_TRUNC('hour', NOW()) - COALESCE(last_seen, created_at))) / 86400.0,
       0
     ) / 30.0
   )`;
@@ -640,7 +655,7 @@ async function updateMemoryMd(workspaceDir, section) {
     content = content.trimEnd() + "\n\n" + section + "\n";
   }
 
-  await fs.writeFile(memPath, content, "utf-8");
+  await writeIfChanged(memPath, content);
 }
 
 // ─── BRAINX_CONTEXT.md + topic files (backward compat) ───────
@@ -648,7 +663,7 @@ async function updateMemoryMd(workspaceDir, section) {
 async function writeTopicFile(dir, filename, title, memories, timestamp) {
   const filePath = path.join(dir, filename);
   if (memories.length === 0) {
-    await fs.writeFile(filePath, `# ${title} — None found\n`, "utf-8");
+    await writeIfChanged(filePath, `# ${title} — None found\n`);
     return 0;
   }
   const lines = [`# ${title}`, "", `**Updated:** ${timestamp}`, ""];
@@ -658,7 +673,7 @@ async function writeTopicFile(dir, filename, title, memories, timestamp) {
     lines.push("---");
     lines.push("");
   }
-  await fs.writeFile(filePath, lines.join("\n"), "utf-8");
+  await writeIfChanged(filePath, lines.join("\n"));
   return memories.length;
 }
 
@@ -677,7 +692,7 @@ async function writeBrainxContext(
 
   // Compact index — always loaded
   const lines = [
-    "# BrainX V5 Context (Auto-Injected)",
+    "# BrainX Context (Auto-Injected)",
     "",
     `**Agent:** ${agentName} | **Updated:** ${timestamp}`,
     "**Mode:** Compact index — read topic files with `cat brainx-topics/<file>.md` when you need detail",
@@ -737,8 +752,9 @@ async function writeBrainxContext(
     '**Save fact:** `brainx add --type fact --tier hot --importance 8 --context "project:NAME" --content "..."`'
   );
 
-  await fs.writeFile(contextPath, lines.join("\n") + "\n", "utf-8");
-  return lines.join("\n").length;
+  const content = lines.join("\n") + "\n";
+  await writeIfChanged(contextPath, content);
+  return content.length;
 }
 
 // ─── Telemetry ─────────────────────────────────────────────────

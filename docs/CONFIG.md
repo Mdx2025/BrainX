@@ -20,7 +20,7 @@ DATABASE_URL=postgresql://brainx:brainx_change_me@127.0.0.1:5432/brainx
 ```
 
 Note:
-- existing deployments may still use a legacy physical database name such as `brainx_v4`
+- existing deployments may still use a legacy physical database name such as `brainx`
 - that naming drift does not block BrainX V5 itself, but docs and code should not assume a specific DB name unless a migration was actually executed
 
 ### `OPENAI_API_KEY`

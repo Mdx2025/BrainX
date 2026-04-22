@@ -1,14 +1,14 @@
 {
-  "name": "brainx-v5",
-  "version": "0.4.0",
-  "private": true,
+  "name": "brainx",
+  "version": "0.6.0",
+  "description": "Persistent vector memory for OpenClaw agents",
+  "license": "MIT",
   "type": "commonjs",
   "scripts": {
     "test": "node ./tests/cli-v5.js",
     "test:smoke": "node ./tests/smoke.js",
     "test:rag": "node ./tests/rag.js",
-    "eval:memory-quality": "node ./scripts/eval-memory-quality.js --dataset ./tests/fixtures/memory-eval-sample.jsonl",
-    "eval:build-real-dataset": "node ./scripts/generate-eval-dataset-from-memories.js ./tests/fixtures/memory-eval-real.jsonl 80"
+    "eval:memory-quality": "node ./scripts/eval-memory-quality.js --dataset ./tests/fixtures/memory-eval-sample.jsonl"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

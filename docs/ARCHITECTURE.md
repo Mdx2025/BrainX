@@ -6,6 +6,9 @@ BrainX V5 is a lightweight memory service implemented as:
 - **pgvector** for vector similarity search
 - **OpenAI embeddings API** to generate vectors
 - A small **Node.js CLI** to write/search/inject memory into prompts
+- Two OpenClaw hooks:
+  - `hook/handler.js` for bootstrap injection
+  - `hook-live/handler.js` for near-real-time outbound capture on `message:sent`
 
 This repo is intentionally minimal: it can be embedded into larger systems (e.g. OpenClaw) without running a dedicated HTTP service.
 
@@ -13,7 +16,7 @@ This repo is intentionally minimal: it can be embedded into larger systems (e.g.
 
 ### 1) CLI entrypoints
 
-- `./brainx-v5` (bash wrapper)
+- `./brainx` (bash wrapper)
   - `health` → runs `tests/smoke.js`
   - `add|search|inject` → runs `lib/cli.js`
 
@@ -31,6 +34,12 @@ This repo is intentionally minimal: it can be embedded into larger systems (e.g.
   - `storeMemory(memory)` → inserts/updates `brainx_memories` (with `embedding`)
   - `search(query, opts)` → embeds query, runs SQL with pgvector distance operator, applies filters, orders by `score`
 
+### 3.5) Live capture telemetry
+
+- `lib/live-capture-stats.js`
+  - `appendLiveCaptureEvent(payload)` → appends structured runtime telemetry to `~/.openclaw/logs/brainx-live-capture.log`
+  - `summarizeLiveCapture(opts)` → aggregates `seen`, `captured`, `low_signal`, `duplicate`, store failures, latency, and last success/error
+
 ### 4) Database layer
 
 - `lib/db.js`
@@ -43,9 +52,20 @@ This repo is intentionally minimal: it can be embedded into larger systems (e.g.
 
 1. CLI receives `--type`, `--content`, etc.
 2. `openai-rag.storeMemory()`:
+   - runs `assessMemoryQuality()` before paying for embeddings
+   - skips acknowledgements/placeholders/noise and downgrades borderline signal
    - builds an embedding input string: `"${type}: ${content} [context: ${context}]"`
    - calls OpenAI embeddings
    - upserts into `brainx_memories`
+
+### Weekly consolidation
+
+1. `cron/weekly-semantic-consolidation.sh` gates execution to the configured UTC weekday
+2. `scripts/memory-consolidator.js` selects only mature, non-superseded memories with embeddings
+3. Eligibility rejects runtime/subagent wrappers, changelog noise, borderline quality, and already-consolidated rows
+4. Clusters are constrained to the same `type + agent + context + category + sensitivity`
+5. Merged memories are persisted through `openai-rag.storeMemoryWithClient(..., { skipDedupe: true })`
+6. Originals are superseded transactionally only after the consolidated memory is stored
 
 ### Search
 
@@ -67,6 +87,21 @@ Same as search, but output is formatted for direct prompt injection:
 [sim:0.62 imp:9 tier:hot type:decision agent:coder ctx:openclaw]
 <content...>
 ```
+
+### Live capture
+
+1. OpenClaw emits `message:sent`
+2. `hook-live/handler.js` filters for high-signal outbound recommendations
+3. The hook writes a compact bullet to `memory/YYYY-MM-DD.md`
+4. The same summary is stored in `brainx_memories` with conservative provenance
+5. `appendLiveCaptureEvent()` records the runtime outcome for observability
+
+Terminal outcomes are:
+
+- `captured`
+- `low_signal`
+- `duplicate`
+- `capture_failed`
 
 ## Filters and ranking
 
@@ -114,6 +149,7 @@ Optional:
 - No HTTP service by default: easier to run locally, in cron jobs, or as a library.
 - `context` filtering is exact-match right now (simple + predictable).
 - `superseded_by` enables cheap “soft delete” / dedup without losing history.
+- Near-real-time capture is intentionally heuristic and conservative: it prefers skipping weak signals over filling BrainX with noise.
 
 ## Recommended next improvements (optional)
 

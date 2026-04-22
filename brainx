@@ -24,14 +24,29 @@ case "$CMD" in
   health)
     node "$ROOT/tests/smoke.js"
     ;;
-  feedback)
-    node "$ROOT/scripts/memory-feedback.js" "$@"
-    ;;
-  add|fact|facts|feature|features|search|inject|resolve|promote-candidates|lifecycle-run|metrics|doctor|fix|--fix|advisory|advisory-feedback|eidos)
+  add|fact|facts|feature|features|search|inject|feedback|resolve|promote-candidates|lifecycle-run|metrics|runtime-report|doctor|fix|--fix|advisory|advisory-feedback|eidos|wiki)
     node "$ROOT/lib/cli.js" "$CMD" "$@"
     ;;
   distill)
     node "$ROOT/scripts/auto-distiller.js" "$@"
+    ;;
+  knowledge-import)
+    node "$ROOT/scripts/import-knowledge-md.js" "$@"
+    ;;
+  knowledge-sync|knowledge-refresh)
+    node "$ROOT/scripts/knowledge-sync.js" "$@"
+    ;;
+  knowledge-locate|knowledge-locator)
+    node "$ROOT/scripts/knowledge-locate.js" "$@"
+    ;;
+  knowledge-new)
+    node "$ROOT/scripts/new-knowledge-topic.js" "$@"
+    ;;
+  knowledge-seed)
+    node "$ROOT/scripts/seed-knowledge-library.js" "$@"
+    ;;
+  knowledge-auto-sync)
+    node "$ROOT/scripts/sync-knowledge-auto-blocks.js" "$@"
     ;;
   consolidate|consolidation)
     node "$ROOT/scripts/memory-consolidator.js" "$@"

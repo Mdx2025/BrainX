@@ -26,7 +26,7 @@ Stores atomic memory items (decisions, actions, notes, learnings, etc.) plus met
   - exact-match scope key. Examples:
     - `openclaw`
     - `emailbot`
-    - `workspace-coder/MEMORY.md`
+    - `workspace-<agent>/MEMORY.md`
 - `tier` (text, default `warm`)
   - `hot | warm | cold | archive`
 - `agent` (text, nullable)
@@ -44,6 +44,12 @@ Stores atomic memory items (decisions, actions, notes, learnings, etc.) plus met
 - `superseded_by` (text, nullable)
   - points to the “kept” memory when this one is superseded/deduped.
 - `tags` (text[])
+- `verification_state` (text, default `hypothesis`)
+  - retrieval trust level:
+    - `verified` → memory can safely influence operational decisions
+    - `hypothesis` → plausible but not yet trustworthy enough to outrank live evidence
+    - `changelog` → historical/reporting value, not decision authority
+    - `obsolete` → excluded from retrieval
 
 ### Indexes
 

@@ -154,7 +154,7 @@ For each problem→solution trajectory found, extract:
 - steps: array of {action, result} showing the resolution path (max 5 steps)
 - solution: the final solution or approach that worked
 - outcome: "success" if solved, "partial" if partly solved, "failed" if not solved
-- context: project/topic context (e.g. "brainx-v5", "railway deployment", "email automation")
+- context: project/topic context (e.g. "brainx", "railway deployment", "email automation")
 
 Only extract meaningful trajectories (not trivial Q&A or greetings).
 Return a JSON object: { "trajectories": [...] }

@@ -1,13 +1,13 @@
-# CLI Reference (brainx-v5)
+# CLI Reference (brainx)
 
-Entry point: `./brainx-v5`
+Entry point: `./brainx`
 
 Internally it delegates to `lib/cli.js`.
 
 ## Global help
 
 ```bash
-./brainx-v5 --help
+./brainx --help
 ```
 
 ## `health`
@@ -15,7 +15,7 @@ Internally it delegates to `lib/cli.js`.
 Runs a database smoke test:
 
 ```bash
-./brainx-v5 health
+./brainx health
 ```
 
 Checks:
@@ -29,7 +29,7 @@ Checks:
 Store (upsert) a memory item.
 
 ```bash
-./brainx-v5 add \
+./brainx add \
   --type <type> \
   --content <text> \
   [--context <ctx>] \
@@ -64,7 +64,7 @@ Notes:
 Semantic search returning JSON.
 
 ```bash
-./brainx-v5 search \
+./brainx search \
   --query <text> \
   [--limit <n>] \
   [--minSimilarity <0-1>] \
@@ -84,7 +84,7 @@ Returned fields include:
 Semantic search formatted as a prompt-ready block (plain text).
 
 ```bash
-./brainx-v5 inject \
+./brainx inject \
   --query <text> \
   [--limit <n>] \
   [--context <ctx>] \
@@ -148,7 +148,7 @@ Optional:
 Set lifecycle resolution fields on a single memory (`--id`) or by recurring pattern (`--patternKey`).
 
 ```bash
-./brainx-v5 resolve \
+./brainx resolve \
   (--id <id> | --patternKey <key>) \
   --status <pending|in_progress|resolved|promoted|wont_fix> \
   [--resolvedAt <iso>] \
@@ -163,7 +163,7 @@ Returns JSON with updated rows.
 Lists recurring patterns that meet promotion thresholds. Output is JSON.
 
 ```bash
-./brainx-v5 promote-candidates \
+./brainx promote-candidates \
   [--minRecurrence <n>] \
   [--days <n>] \
   [--limit <n>] \
@@ -181,7 +181,7 @@ Automates lifecycle transitions:
 - refresh affected `brainx_patterns` aggregate status/recurrence timestamps
 
 ```bash
-./brainx-v5 lifecycle-run \
+./brainx lifecycle-run \
   [--promoteMinRecurrence <n>] \
   [--promoteDays <n>] \
   [--degradeDays <n>] \
@@ -200,9 +200,13 @@ Operational KPIs (JSON):
 - counts by status/category/tier
 - top recurring patterns
 - search/inject query performance from `brainx_query_log`
+- `live_capture` telemetry from `brainx-live-capture.log`
+  - `seen`, `captured`, `low_signal`, `duplicate`, `capture_failed`
+  - `daily_memory_failures`, `brainx_store_failures`
+  - latency summary and last success/error timestamps
 
 ```bash
-./brainx-v5 metrics [--days <n>] [--topPatterns <n>] [--json]
+./brainx metrics [--days <n>] [--topPatterns <n>] [--json]
 ```
 
 ## Offline eval harness
@@ -226,8 +230,15 @@ Outputs proxy metrics including `hit_at_k_proxy`, `avg_top_similarity`, and dupl
 
 Diagnose BrainX installation health, schema, cron, and configuration issues.
 
+`doctor` now also validates the near-real-time live-capture surface:
+
+- bootstrap hook deployed
+- live capture hook deployed
+- managed hook source == deployed
+- live-capture telemetry available and summarized from recent production logs
+
 ```bash
-./brainx-v5 doctor [--json]
+./brainx doctor [--json]
 ```
 
 ## `fix`
@@ -235,7 +246,7 @@ Diagnose BrainX installation health, schema, cron, and configuration issues.
 Auto-fix issues detected by `doctor`.
 
 ```bash
-./brainx-v5 fix [--json] [--dry-run]
+./brainx fix [--json] [--dry-run]
 ```
 
 ## `fact`
@@ -243,7 +254,7 @@ Auto-fix issues detected by `doctor`.
 Shortcut to add a fact-type memory (tier: hot, category: infrastructure).
 
 ```bash
-./brainx-v5 fact --content "Some important fact"
+./brainx fact --content "Some important fact"
 ```
 
 ## `facts`
@@ -251,7 +262,7 @@ Shortcut to add a fact-type memory (tier: hot, category: infrastructure).
 List stored facts, optionally filtered by context.
 
 ```bash
-./brainx-v5 facts [--context <ctx>] [--limit 30]
+./brainx facts [--context <ctx>] [--limit 30]
 ```
 
 ## `promote-candidates`
@@ -259,7 +270,7 @@ List stored facts, optionally filtered by context.
 Promote recurring memories from agent-local to global tier.
 
 ```bash
-./brainx-v5 promote-candidates [--minRecurrence 3] [--days 30] [--limit 50]
+./brainx promote-candidates [--minRecurrence 3] [--days 30] [--limit 50]
 ```
 
 ## `lifecycle-run`
@@ -267,7 +278,7 @@ Promote recurring memories from agent-local to global tier.
 Run the full memory lifecycle (promote + degrade + archive).
 
 ```bash
-./brainx-v5 lifecycle-run [--promote-min-recurrence 3] [--promote-days 30] [--degrade-days 45]
+./brainx lifecycle-run [--promote-min-recurrence 3] [--promote-days 30] [--degrade-days 45]
 ```
 
 ## `advisory`
@@ -275,7 +286,7 @@ Run the full memory lifecycle (promote + degrade + archive).
 Check BrainX advisories before executing a high-risk tool.
 
 ```bash
-./brainx-v5 advisory --tool <tool> [--args '{}'] [--agent <agent>] [--project <project>] [--json]
+./brainx advisory --tool <tool> [--args '{}'] [--agent <agent>] [--project <project>] [--json]
 ```
 
 ## `advisory-feedback`
@@ -283,7 +294,7 @@ Check BrainX advisories before executing a high-risk tool.
 Record whether an advisory was followed.
 
 ```bash
-./brainx-v5 advisory-feedback --id <advisory_id> --followed yes|no [--outcome "..."]
+./brainx advisory-feedback --id <advisory_id> --followed yes|no [--outcome "..."]
 ```
 
 ## `eidos`
@@ -291,5 +302,5 @@ Record whether an advisory was followed.
 Behavioral prediction and pattern evaluation engine.
 
 ```bash
-./brainx-v5 eidos predict|evaluate|distill|stats [options]
+./brainx eidos predict|evaluate|distill|stats [options]
 ```

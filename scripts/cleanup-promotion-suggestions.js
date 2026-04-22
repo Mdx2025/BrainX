@@ -3,6 +3,14 @@
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env'), override: true, quiet: true });
 
 const db = require('../lib/db');
+const {
+  extractRule,
+  extractSuggestionMetadata,
+  normalizeRule,
+  isLowSignalPromotionRule,
+  readCanonicalRules,
+  findCanonicalRuleMatch,
+} = require('../lib/promotion-governance');
 
 function parseArgs(argv) {
   return {
@@ -28,21 +36,8 @@ const REJECT_PATTERNS = [
   /\bmdx seo growth report\b/i,
 ];
 
-function extractRule(content) {
-  const match = String(content || '').match(/Rule:\s*([\s\S]*?)(?:\nReason:|\nRecurrence:|\nSource:|$)/i);
-  return (match?.[1] || content || '').replace(/\s+/g, ' ').trim();
-}
-
-function normalizeRule(text) {
-  return String(text || '')
-    .toLowerCase()
-    .replace(/\[×\d+\]\s*/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 function shouldReject(rule) {
-  return REJECT_PATTERNS.some((pattern) => pattern.test(rule));
+  return isLowSignalPromotionRule(rule) || REJECT_PATTERNS.some((pattern) => pattern.test(rule));
 }
 
 async function main() {
@@ -64,23 +59,28 @@ async function main() {
        AND COALESCE(status, '') IN ('promoted', 'applied')`
   );
   const promotedRules = new Set(promotedRows.rows.map((row) => normalizeRule(extractRule(row.content))));
+  const canonical = readCanonicalRules();
 
   const rejectIds = [];
   const keepIds = [];
   const samples = [];
 
   for (const row of rows) {
-    const rule = extractRule(row.content);
+    const meta = extractSuggestionMetadata(row.content);
+    const rule = meta.rule;
     const normalized = normalizeRule(rule);
     const duplicateOfPromoted = promotedRules.has(normalized);
+    const duplicateOfCanonical = Boolean(findCanonicalRuleMatch(rule, canonical, meta.targetKey));
     const invalid = shouldReject(rule);
-    if (duplicateOfPromoted || invalid || row.verification_state === 'obsolete' || row.superseded_by) {
+    if (duplicateOfPromoted || duplicateOfCanonical || invalid || row.verification_state === 'obsolete' || row.superseded_by) {
       rejectIds.push(row.id);
       if (samples.length < 20) {
         samples.push({
           id: row.id,
           reason: duplicateOfPromoted
             ? 'duplicate_of_promoted'
+            : duplicateOfCanonical
+              ? 'duplicate_of_canonical'
             : (row.verification_state === 'obsolete' || row.superseded_by ? 'stale_duplicate' : 'low_signal'),
           rule: rule.slice(0, 180),
         });

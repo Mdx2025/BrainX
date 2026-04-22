@@ -1,353 +1,47 @@
 {
-  "main": {
-    "contexts": ["project", "project_registry", "agent", "workspace", "business", "personal", "tools", "infrastructure", "qa", "audit"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["decision", "fact", "gotcha"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.50, "importance": 0.25 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.20
-  },
-  "coder": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice", "agent"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "coder-public": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.10
-  },
-  "coder-private-social-media": {
-    "contexts": ["project", "business", "infrastructure", "tools"],
+  "default": {
+    "contexts": [],
     "excludeTypes": ["learning", "note"],
     "boostTypes": ["fact", "decision", "gotcha"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
+    "scoringWeights": { "recency": 0.2, "relevance": 0.5, "importance": 0.3 },
     "allowCrossAgent": false,
     "crossAgentTagRequired": true,
     "crossAgentRatio": 0
   },
-  "writer": {
-    "contexts": ["business", "project", "personal", "client", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["decision", "fact", "action"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "monitor": {
-    "contexts": ["infrastructure", "error", "qa", "tools", "agent"],
+  "engineering": {
+    "contexts": ["project", "infrastructure", "deployment", "database", "backend", "frontend"],
     "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "action"],
-    "scoringWeights": { "recency": 0.30, "relevance": 0.40, "importance": 0.20 },
+    "boostTypes": ["gotcha", "decision", "fact", "correction"],
+    "scoringWeights": { "recency": 0.2, "relevance": 0.55, "importance": 0.25 },
     "allowCrossAgent": true,
     "crossAgentTagRequired": true,
     "crossAgentRatio": 0.25
   },
-  "monitor-public": {
-    "contexts": ["infrastructure", "error", "qa", "tools"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "action"],
-    "scoringWeights": { "recency": 0.30, "relevance": 0.40, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.20
-  },
-  "raider": {
-    "contexts": ["business", "client", "project", "personal", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision", "action"],
-    "scoringWeights": { "recency": 0.25, "relevance": 0.45, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "raider-private": {
-    "contexts": ["business", "client", "project", "personal", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision", "action"],
-    "scoringWeights": { "recency": 0.25, "relevance": 0.45, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "clawma": {
-    "contexts": ["project", "agent", "workspace", "tools", "infrastructure"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["decision", "fact", "gotcha", "action"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "reasoning": {
-    "contexts": ["project", "project_registry", "business", "infrastructure", "agent", "workspace", "personal"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["decision", "fact", "gotcha", "learning"],
-    "scoringWeights": { "recency": 0.10, "relevance": 0.55, "importance": 0.25 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.25
-  },
-  "reasoning-private-propuestas": {
-    "contexts": ["business", "client", "project", "personal", "context"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["decision", "fact", "learning"],
-    "scoringWeights": { "recency": 0.10, "relevance": 0.55, "importance": 0.25 },
+  "writing": {
+    "contexts": ["content", "brand", "docs", "proposal", "email"],
+    "excludeTypes": ["gotcha"],
+    "boostTypes": ["fact", "decision", "learning"],
+    "scoringWeights": { "recency": 0.25, "relevance": 0.5, "importance": 0.25 },
     "allowCrossAgent": true,
     "crossAgentTagRequired": true,
     "crossAgentRatio": 0.15
   },
-  "support": {
-    "contexts": ["business", "client", "project", "personal", "tools"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision", "gotcha"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
+  "research": {
+    "contexts": ["research", "market", "product", "strategy", "knowledge"],
+    "excludeTypes": [],
+    "boostTypes": ["fact", "learning", "decision"],
+    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.3 },
     "allowCrossAgent": true,
     "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.10
+    "crossAgentRatio": 0.35
   },
-  "support-public": {
-    "contexts": ["business", "client", "project"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision", "gotcha"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.10
-  },
-  "support-private": {
-    "contexts": ["business", "client", "project", "personal"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision", "gotcha"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.10
-  },
-  "support-private-emails": {
-    "contexts": ["business", "client", "personal", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision"],
-    "scoringWeights": { "recency": 0.25, "relevance": 0.45, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "researcher": {
-    "contexts": ["project", "project_registry", "business", "infrastructure", "tools", "agent"],
+  "operations": {
+    "contexts": ["operations", "monitoring", "cron", "health", "incident"],
     "excludeTypes": ["note"],
-    "boostTypes": ["fact", "decision", "learning", "gotcha"],
-    "scoringWeights": { "recency": 0.10, "relevance": 0.55, "importance": 0.25 },
+    "boostTypes": ["gotcha", "correction", "fact", "decision"],
+    "scoringWeights": { "recency": 0.3, "relevance": 0.45, "importance": 0.25 },
     "allowCrossAgent": true,
     "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.30
-  },
-  "researcher-public": {
-    "contexts": ["project", "business", "infrastructure", "tools"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["fact", "decision", "learning", "gotcha"],
-    "scoringWeights": { "recency": 0.10, "relevance": 0.55, "importance": 0.25 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.25
-  },
-  "researcher-private": {
-    "contexts": ["project", "business", "infrastructure", "personal"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["fact", "decision", "learning", "gotcha"],
-    "scoringWeights": { "recency": 0.10, "relevance": 0.55, "importance": 0.25 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.20
-  },
-  "karl": {
-    "contexts": ["personal", "business", "project", "client", "context"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["fact", "decision", "action"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "echo": {
-    "contexts": ["business", "client", "project", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision", "action"],
-    "scoringWeights": { "recency": 0.25, "relevance": 0.45, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "claude-cli": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "codex-cli": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "gemini-cli": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "kimi-cli": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "opencode": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "opencode-cli": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "venus": {
-    "contexts": ["business", "project", "personal", "client", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["decision", "fact", "action"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "matrix": {
-    "contexts": ["business", "project", "personal", "client", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["decision", "fact", "action"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "sonnet": {
-    "contexts": ["project", "agent", "workspace", "tools"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["decision", "fact", "gotcha", "action"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "kron": {
-    "contexts": ["project", "infrastructure", "agent", "tools", "qa", "error"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.45, "importance": 0.25 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "max": {
-    "contexts": ["business", "project", "personal", "client", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["decision", "fact", "action"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "animus": {
-    "contexts": ["business", "project", "personal", "client", "context"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["decision", "fact", "action"],
-    "scoringWeights": { "recency": 0.20, "relevance": 0.50, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "alert": {
-    "contexts": ["business", "project", "infrastructure", "tools"],
-    "excludeTypes": ["learning", "note"],
-    "boostTypes": ["fact", "decision", "gotcha"],
-    "scoringWeights": { "recency": 0.25, "relevance": 0.45, "importance": 0.20 },
-    "allowCrossAgent": false,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0
-  },
-  "claude": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "codex": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "gemini": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "kimi": {
-    "contexts": ["project", "infrastructure", "tools", "qa", "error", "best_practice"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["gotcha", "fact", "decision"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.15
-  },
-  "blade": {
-    "contexts": ["project", "infrastructure", "tools", "business", "agent"],
-    "excludeTypes": ["note"],
-    "boostTypes": ["decision", "fact", "gotcha", "action"],
-    "scoringWeights": { "recency": 0.15, "relevance": 0.55, "importance": 0.20 },
-    "allowCrossAgent": true,
-    "crossAgentTagRequired": true,
-    "crossAgentRatio": 0.10
+    "crossAgentRatio": 0.2
   }
 }

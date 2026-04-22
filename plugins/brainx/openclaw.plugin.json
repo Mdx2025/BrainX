@@ -1,0 +1,133 @@
+{
+  "id": "brainx",
+  "uiHints": {
+    "enforceAgentOptIn": {
+      "label": "Agent Opt-In",
+      "help": "Global fallback gate. Surface-specific allowlists override this when present."
+    },
+    "wikiDigestEnabledAgents": {
+      "label": "Wiki Digest Agent Pilot",
+      "help": "Optional allowlist for wiki digest. Empty means fall back to global agent opt-in."
+    },
+    "wikiDigest": {
+      "label": "Wiki Digest",
+      "help": "Inject a small precompiled BrainX Wiki digest instead of live working memory."
+    },
+    "jitRecallEnabledAgents": {
+      "label": "JIT Recall Agent Pilot",
+      "help": "Optional allowlist for JIT recall. Empty means fall back to global agent opt-in."
+    },
+    "jitRecall": {
+      "label": "JIT Recall",
+      "help": "Inject concise BrainX recall before prompt submission when results are strong enough."
+    },
+    "jitRecallAllowCrossAgent": {
+      "label": "JIT Recall: Allow Cross-Agent",
+      "help": "If false, JIT recall only injects memories whose agent matches the current agent (or NULL/global). Default false to prevent cross-contamination."
+    },
+    "jitRecallCrossAgentTagRequired": {
+      "label": "JIT Recall: Require cross-agent Tag",
+      "help": "When cross-agent injection is allowed, require the memory to carry the 'cross-agent' tag. Default true."
+    },
+    "jitRecallCrossAgentRequireVerified": {
+      "label": "JIT Recall: Require Verified for Cross-Agent",
+      "help": "When cross-agent injection is allowed, require verification_state='verified'. Default true."
+    },
+    "workingMemoryEnabledAgents": {
+      "label": "Working Memory Agent Pilot",
+      "help": "Optional allowlist for working memory. Empty means fall back to global agent opt-in."
+    },
+    "workingMemory": {
+      "label": "Working Memory",
+      "help": "Maintain a short session-state layer and inject it before historical BrainX recall."
+    },
+    "toolAdvisoriesEnabledAgents": {
+      "label": "Tool Advisory Agent Pilot",
+      "help": "Optional allowlist for tool advisories. Empty means fall back to global agent opt-in."
+    },
+    "toolAdvisories": {
+      "label": "Tool Advisories",
+      "help": "Look up BrainX advisories before high-risk tool calls."
+    },
+    "captureToolFailuresEnabledAgents": {
+      "label": "Failure Capture Agent Pilot",
+      "help": "Optional allowlist for tool-failure capture. Empty means fall back to global agent opt-in."
+    },
+    "captureToolFailures": {
+      "label": "Tool Failure Capture",
+      "help": "Store conservative memories for meaningful high-risk tool failures."
+    },
+    "bootstrapEnabledAgents": {
+      "label": "Bootstrap Agent Pilot",
+      "help": "Optional allowlist for bootstrap bridge mode. Empty means fall back to global agent opt-in."
+    },
+    "bootstrapMode": {
+      "label": "Bootstrap Bridge Mode",
+      "help": "off|auto|on. Auto only runs plugin bootstrap bridge if the internal BrainX hook is disabled."
+    },
+    "captureOutboundEnabledAgents": {
+      "label": "Outbound Capture Agent Pilot",
+      "help": "Optional allowlist for outbound capture bridge mode. Empty means fall back to global agent opt-in."
+    },
+    "captureOutboundMode": {
+      "label": "Outbound Capture Mode",
+      "help": "off|auto|on. Auto only runs plugin outbound capture if the internal live-capture hook is disabled."
+    }
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled": { "type": "boolean" },
+      "enforceAgentOptIn": { "type": "boolean" },
+      "enabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "wikiDigestEnabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "wikiDigest": { "type": "boolean" },
+      "wikiDigestMaxChars": { "type": "integer", "minimum": 180, "maximum": 2000 },
+      "wikiDigestPromptSignalsOnly": { "type": "boolean" },
+      "wikiDigestStaleHours": { "type": "integer", "minimum": 1, "maximum": 720 },
+      "wikiDigestVaultDir": { "type": "string" },
+      "jitRecallEnabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "jitRecall": { "type": "boolean" },
+      "recallLimit": { "type": "integer", "minimum": 1, "maximum": 8 },
+      "recallMinSimilarity": { "type": "number", "minimum": 0, "maximum": 1 },
+      "recallMinImportance": { "type": "integer", "minimum": 0, "maximum": 10 },
+      "recallMaxChars": { "type": "integer", "minimum": 200, "maximum": 2000 },
+      "jitRecallAllowCrossAgent": { "type": "boolean" },
+      "jitRecallCrossAgentTagRequired": { "type": "boolean" },
+      "jitRecallCrossAgentRequireVerified": { "type": "boolean" },
+      "workingMemoryEnabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "workingMemory": { "type": "boolean" },
+      "workingMemoryMaxChars": { "type": "integer", "minimum": 240, "maximum": 2000 },
+      "workingMemoryMaxEvents": { "type": "integer", "minimum": 6, "maximum": 20 },
+      "workingMemoryUseLlm": { "type": "boolean" },
+      "workingMemoryLlmModel": { "type": "string", "minLength": 1 },
+      "workingMemoryLlmBaseURL": { "type": "string", "minLength": 1 },
+      "workingMemoryLlmCooldownMs": { "type": "integer", "minimum": 10000, "maximum": 600000 },
+      "workingMemoryLlmMinTextChars": { "type": "integer", "minimum": 80, "maximum": 2000 },
+      "toolAdvisoriesEnabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "toolAdvisories": { "type": "boolean" },
+      "advisoryRequireApproval": { "type": "boolean" },
+      "advisoryApprovalThreshold": { "type": "number", "minimum": 0, "maximum": 1 },
+      "advisoryMaxChars": { "type": "integer", "minimum": 120, "maximum": 2000 },
+      "captureToolFailuresEnabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "captureToolFailures": { "type": "boolean" },
+      "writeFailuresToDailyMemory": { "type": "boolean" },
+      "writeFailuresToBrainx": { "type": "boolean" },
+      "bootstrapEnabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "bootstrapMode": { "type": "string", "enum": ["off", "auto", "on"] },
+      "captureOutboundEnabledAgents": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true },
+      "captureOutboundMode": { "type": "string", "enum": ["off", "auto", "on"] },
+      "logLevel": { "type": "string", "enum": ["debug", "info", "warn", "error"] },
+      "signalGateEnabled": { "type": "boolean" },
+      "signalGateMinImportance": { "type": "integer", "minimum": 0, "maximum": 10 },
+      "signalGateMinSimilarity": { "type": "number", "minimum": 0, "maximum": 1 },
+      "signalGateStaleDays": { "type": "integer", "minimum": 0, "maximum": 365 },
+      "signalGateRecencyDecayDays": { "type": "integer", "minimum": 0, "maximum": 365 },
+      "antiDupPromptEnabled": { "type": "boolean" },
+      "antiDupPromptMinOverlap": { "type": "number", "minimum": 0, "maximum": 1 },
+      "workingMemoryMinRelevance": { "type": "number", "minimum": 0, "maximum": 1 },
+      "wikiDigestMinRelevance": { "type": "number", "minimum": 0, "maximum": 1 }
+    }
+  }
+}

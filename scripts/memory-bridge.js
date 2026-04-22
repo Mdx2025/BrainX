@@ -108,9 +108,9 @@ function classifyBlock(text) {
     return { type: 'decision', importance: 7 };
   }
 
-  // Error / fix / bug → learning
+  // Error / fix / bug → note (changelog/error context until verified elsewhere)
   if (/(?:error|fix|bug|fallo|falló|crash|broke|roto|no funciona|se cayó|exception|la solución|se resolvió|corregido|arreglado|el problema era)/i.test(lower)) {
-    return { type: 'learning', importance: 7, category: 'error' };
+    return { type: 'note', importance: 5, category: 'error' };
   }
 
   // Gotcha / cuidado

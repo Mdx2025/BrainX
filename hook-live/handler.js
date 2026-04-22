@@ -1,5 +1,5 @@
 /**
- * BrainX V5 Live Capture Hook
+ * BrainX Live Capture Hook
  *
  * Runs on message:sent and captures high-signal outbound recommendations
  * into daily memory + BrainX with conservative provenance.
@@ -12,7 +12,7 @@ import os from "node:os";
 import path from "node:path";
 
 const STATE_DIR = process.env.OPENCLAW_STATE_DIR?.trim() || path.join(os.homedir(), ".openclaw");
-const BRAINX_DIR = path.join(STATE_DIR, "skills", "brainx-v5");
+const BRAINX_DIR = path.join(STATE_DIR, "skills", "brainx");
 const brainxRequire = createRequire(path.join(BRAINX_DIR, "package.json"));
 
 const DEFAULTS = {
@@ -118,7 +118,7 @@ async function logOutcome(payload) {
 async function resolveWorkspaceDir(agentId) {
   try {
     const cfg = await readOpenClawConfig();
-    const agents = Array.isArray(cfg?.agents?.entries) ? cfg.agents.entries : [];
+    const agents = Array.isArray(cfg?.agents?.list) ? cfg.agents.list : [];
     const exact = agents.find((entry) => entry?.id === agentId || entry?.name === agentId);
     if (typeof exact?.workspace === "string" && exact.workspace) return exact.workspace;
   } catch {

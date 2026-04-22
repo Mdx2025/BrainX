@@ -1,0 +1,22 @@
+{
+  "name": "@mdx/brainx-openclaw",
+  "version": "0.6.0",
+  "description": "BrainX V6 runtime bridge plugin for OpenClaw",
+  "type": "module",
+  "main": "index.ts",
+  "license": "MIT",
+  "files": [
+    "index.ts",
+    "src/**/*.ts",
+    "openclaw.plugin.json",
+    "README.md"
+  ],
+  "peerDependencies": {
+    "openclaw": "*"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

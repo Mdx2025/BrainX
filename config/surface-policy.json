@@ -1,0 +1,83 @@
+{
+  "version": 2,
+  "lastReviewed": "2026-04-16",
+  "notes": "Machine-readable companion to docs/RUNTIME_STATUS.md. Reactivated jitRecall/workingMemory/toolAdvisories/captureToolFailures with strict signal gate. Legacy bootstrap hook remains off; plugin bootstrap bridge off until handler refactor.",
+  "surfaces": {
+    "learning_details": {
+      "state": "dormant",
+      "owner": "skill",
+      "expectedSchedule": "off",
+      "script": "scripts/learning-detail-extractor.js",
+      "notes": "Script and table exist, but the consolidated host scheduler does not run it and no active runtime consumer currently depends on it."
+    },
+    "session_snapshots": {
+      "state": "manual",
+      "owner": "skill",
+      "expectedSchedule": "off",
+      "script": "scripts/session-snapshot.js",
+      "notes": "Useful for targeted analysis, but intentionally excluded from the daily+Sunday wrapper on this host."
+    },
+    "trajectories": {
+      "state": "dormant",
+      "owner": "skill",
+      "expectedSchedule": "off",
+      "script": "scripts/trajectory-recorder.js",
+      "notes": "Trajectory recording exists, but the surface is not scheduled on this host."
+    },
+    "advisory_feedback": {
+      "state": "active",
+      "owner": "plugin",
+      "expectedSchedule": "runtime",
+      "configKey": "toolAdvisories",
+      "notes": "Reactivated 2026-04-16 with requireApproval=true + threshold 0.85 (silent-until-critical)."
+    },
+    "eidos": {
+      "state": "dormant",
+      "owner": "skill",
+      "expectedSchedule": "off",
+      "notes": "Schema and CLI exist, but there is no active cron or runtime integration for EIDOS on this host."
+    },
+    "live_capture": {
+      "state": "disabled",
+      "owner": "legacy hook / plugin-adjacent",
+      "expectedSchedule": "off",
+      "configKey": "captureOutboundMode",
+      "notes": "Telemetry can still be inspected historically, but live capture is not part of the current production route."
+    },
+    "working_memory": {
+      "state": "active",
+      "owner": "plugin",
+      "expectedSchedule": "runtime",
+      "configKey": "workingMemory",
+      "notes": "Reactivated 2026-04-16 with Haiku 4.5, cap 600 chars, 8 events, 45s LLM cooldown."
+    },
+    "jit_recall": {
+      "state": "active",
+      "owner": "plugin",
+      "expectedSchedule": "runtime",
+      "configKey": "jitRecall",
+      "notes": "Reactivated 2026-04-16 with strict signal gate (imp>=7, sim>=0.72, stale>14d+zero-access), anti-dup vs prompt (0.6 overlap), recency decay 30d."
+    },
+    "capture_tool_failures": {
+      "state": "active",
+      "owner": "plugin",
+      "expectedSchedule": "runtime",
+      "configKey": "captureToolFailures",
+      "notes": "Reactivated 2026-04-16 writing to BrainX DB. Severity scaling from error-harvester patch 2026-04-14 still applies."
+    },
+    "bootstrap_bridge": {
+      "state": "disabled",
+      "owner": "plugin",
+      "expectedSchedule": "off",
+      "configKey": "bootstrapMode",
+      "notes": "Bootstrap bridge kept off until legacy handler is refactored to use bootstrapFiles array instead of writing workspace files. Planned for next session."
+    },
+    "runtime_observability": {
+      "state": "active",
+      "owner": "plugin+skill",
+      "expectedSchedule": "runtime",
+      "configKey": "-",
+      "notes": "Added 2026-04-16: brainx_runtime_injections table + brainx runtime-report CLI. Scores referenced_count via keyword overlap in handleLlmOutput."
+    }
+  }
+}

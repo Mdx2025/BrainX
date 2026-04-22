@@ -28,7 +28,13 @@ CREATE TABLE IF NOT EXISTS brainx_memories (
   last_seen TIMESTAMPTZ DEFAULT NOW(),
   resolved_at TIMESTAMPTZ,
   promoted_to TEXT,
-  resolution_notes TEXT
+  resolution_notes TEXT,
+  source_kind TEXT,
+  source_path TEXT,
+  confidence_score REAL,
+  expires_at TIMESTAMPTZ,
+  sensitivity TEXT,
+  verification_state TEXT DEFAULT 'hypothesis'
 );
 
 -- V4 lifecycle/pattern fields (idempotent for existing V3 installs)
@@ -51,6 +57,33 @@ BEGIN
     ALTER TABLE brainx_memories
       ADD CONSTRAINT brainx_memories_status_check
       CHECK (status IN ('pending', 'in_progress', 'resolved', 'promoted', 'wont_fix'));
+  END IF;
+EXCEPTION WHEN duplicate_object THEN
+  NULL;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'brainx_memories_source_kind_check'
+  ) THEN
+    ALTER TABLE brainx_memories
+      ADD CONSTRAINT brainx_memories_source_kind_check
+      CHECK (source_kind IS NULL OR source_kind IN (
+        'user_explicit',
+        'agent_inference',
+        'tool_verified',
+        'llm_distilled',
+        'markdown_import',
+        'regex_extraction',
+        'summary_derived',
+        'consolidated',
+        'auto_distilled',
+        'knowledge_canonical',
+        'knowledge_staging',
+        'knowledge_generated'
+      ));
   END IF;
 EXCEPTION WHEN duplicate_object THEN
   NULL;
